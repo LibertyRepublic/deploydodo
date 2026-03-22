@@ -61,7 +61,7 @@ pub enum CreateServerRequest {
     Remote {
         name: String,
         hostname: String,
-        port: i64,
+        port: u16,
         auth: SshAuthRequest,
     },
 }
@@ -103,7 +103,7 @@ pub struct CreateServerResponse {
     #[serde(rename = "serverType")]
     pub server_type: types::ServerType,
     pub hostname: String,
-    pub port: Option<i64>,
+    pub port: Option<u16>,
 }
 
 #[utoipa::path(

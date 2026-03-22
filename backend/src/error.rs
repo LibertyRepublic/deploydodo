@@ -28,6 +28,9 @@ pub enum AppError {
 
     #[error("missing key secret")]
     MissingKeySecret,
+
+    #[error("ssh error: {0}")]
+    Ssh(#[from] dodosh::SshError),
 }
 
 impl IntoResponse for AppError {
@@ -53,6 +56,10 @@ impl IntoResponse for AppError {
             AppError::LocalServerAlreadyExists => (StatusCode::CONFLICT, self.to_string()),
             AppError::MissingKeySecret => {
                 tracing::error!("missing key secret");
+                (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
+            }
+            AppError::Ssh(e) => {
+                tracing::error!("dodosh error: {e}");
                 (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
             }
         };

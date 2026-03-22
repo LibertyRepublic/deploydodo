@@ -1,0 +1,9 @@
+[package]
+name = "dodosh"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+russh = "0.58"
+tokio = { workspace = true }
+thiserror = { workspace = true }

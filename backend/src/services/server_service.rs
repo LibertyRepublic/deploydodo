@@ -23,7 +23,7 @@ pub struct Server {
     pub name: String,
     pub server_type: ServerType,
     pub hostname: String,
-    pub ssh_port: Option<i64>,
+    pub ssh_port: Option<u16>,
     pub ssh_key_id: Option<i64>,
 }
 
@@ -74,13 +74,14 @@ impl ServerService {
         &self,
         name: &str,
         hostname: &str,
-        ssh_port: i64,
+        ssh_port: u16,
         auth: RemoteAuth<'_>,
     ) -> Result<Server, AppError> {
         let key_name = format!("{name}-key");
 
         let ssh_key = match auth {
             RemoteAuth::Password { username, password } => {
+                SshService::test_ssh_connection(hostname, ssh_port, auth).await?;
                 self.ssh_service
                     .create_password_auth(&key_name, username, password)
                     .await?
@@ -90,6 +91,7 @@ impl ServerService {
                 private_key,
                 public_key,
             } => {
+                SshService::test_ssh_connection(hostname, ssh_port, auth).await?;
                 self.ssh_service
                     .create_key_auth(&key_name, username, private_key, public_key)
                     .await?

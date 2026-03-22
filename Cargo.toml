@@ -1,3 +1,7 @@
 [workspace]
-members = ["backend"]
+members = ["backend", "dodosh"]
 resolver = "2"
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
+thiserror = "2"
