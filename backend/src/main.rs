@@ -41,9 +41,15 @@ async fn main() {
     let app = Router::new()
         .route("/api/health", get(routes::health::health))
         .route("/api/status", get(routes::status::status))
-        .route("/api/auth/validate", get(routes::validate_session::validate_session))
+        .route(
+            "/api/auth/validate",
+            get(routes::validate_session::validate_session),
+        )
         .route("/api/setup/admin", post(routes::create_admin::create_admin))
-        .route("/api/setup/server", post(routes::create_server::create_server))
+        .route(
+            "/api/setup/server",
+            post(routes::create_server::create_server),
+        )
         .route("/api/openapi.json", get(openapi_json))
         .with_state(deps)
         .layer(cors)
