@@ -1,0 +1,288 @@
+use axum::{extract::State, http::StatusCode, Json};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use utoipa::ToSchema;
+
+use crate::dependencies::Dependencies;
+use crate::error::AppError;
+use crate::services::ssh_service::SshService;
+use crate::services::types::{JobType, RemoteAuth};
+
+// ── SSH auth sub-types ────────────────────────────────────────────────────────
+
+#[derive(Deserialize, ToSchema)]
+#[serde(tag = "authType", rename_all = "lowercase")]
+pub enum SshAuthRequest {
+    Password {
+        username: String,
+        password: String,
+    },
+    KeyPair {
+        username: String,
+        #[serde(rename = "privateKey")]
+        private_key: String,
+        #[serde(rename = "publicKey")]
+        public_key: Option<String>,
+    },
+}
+
+impl SshAuthRequest {
+    pub fn validate(&self) -> Result<(), AppError> {
+        match self {
+            SshAuthRequest::Password { username, password } => {
+                if username.trim().is_empty() {
+                    return Err(AppError::Validation("Username is required".into()));
+                }
+                if password.is_empty() {
+                    return Err(AppError::Validation("Password is required".into()));
+                }
+            }
+            SshAuthRequest::KeyPair {
+                username,
+                private_key,
+                ..
+            } => {
+                if username.trim().is_empty() {
+                    return Err(AppError::Validation("Username is required".into()));
+                }
+                if private_key.trim().is_empty() {
+                    return Err(AppError::Validation("Private key is required".into()));
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+// ── Request / Response ────────────────────────────────────────────────────────
+
+#[derive(Deserialize, ToSchema)]
+pub struct CreateRemoteServerRequest {
+    pub name: String,
+    pub hostname: String,
+    pub port: u16,
+    pub auth: SshAuthRequest,
+}
+
+impl CreateRemoteServerRequest {
+    fn validate(&self) -> Result<(), AppError> {
+        if self.name.trim().is_empty() {
+            return Err(AppError::Validation("Name is required".into()));
+        }
+        if self.hostname.trim().is_empty() {
+            return Err(AppError::Validation("Hostname is required".into()));
+        }
+        self.auth.validate()
+    }
+}
+
+/// Returned immediately — use `jobId` to stream progress via
+/// `GET /api/jobs/:jobId/events`.
+#[derive(Serialize, ToSchema)]
+pub struct StartJobResponse {
+    #[serde(rename = "jobId")]
+    pub job_id: String,
+}
+
+// ── Checklist step types (used by the frontend progress UI) ──────────────────
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ConnectingStep {
+    pub key: String,
+    pub label: String,
+    pub status: CheckListItemStatus,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CheckListItemStatus {
+    Warning,
+    Pending,
+    Loading,
+    Done,
+}
+
+pub fn create_connecting_remote_steps(active_key: &str) -> Vec<ConnectingStep> {
+    let mut steps = vec![
+        ConnectingStep {
+            key: "initiating_ssh".into(),
+            label: "Initiating SSH connection".into(),
+            status: CheckListItemStatus::Pending,
+        },
+        ConnectingStep {
+            key: "checking_root".into(),
+            label: "Checking root permissions".into(),
+            status: CheckListItemStatus::Pending,
+        },
+        ConnectingStep {
+            key: "verifying_docker".into(),
+            label: "Verifying Docker installation".into(),
+            status: CheckListItemStatus::Pending,
+        },
+        ConnectingStep {
+            key: "validating_server".into(),
+            label: "Validating server configuration".into(),
+            status: CheckListItemStatus::Pending,
+        },
+    ];
+
+    let active_index = steps.iter().position(|s| s.key == active_key);
+
+    if let Some(active_index) = active_index {
+        for (i, step) in steps.iter_mut().enumerate() {
+            step.status = if i < active_index {
+                CheckListItemStatus::Done
+            } else if i == active_index {
+                CheckListItemStatus::Loading
+            } else {
+                CheckListItemStatus::Pending
+            };
+        }
+    }
+
+    steps
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/setup/server/remote",
+    request_body = CreateRemoteServerRequest,
+    responses(
+        (status = 202, description = "Job accepted — stream progress via /api/jobs/{jobId}/events", body = StartJobResponse),
+        (status = 422, description = "Validation error"),
+    ),
+    tag = "setup"
+)]
+pub async fn create_remote_server(
+    State(deps): State<Dependencies>,
+    Json(request): Json<CreateRemoteServerRequest>,
+) -> Result<(StatusCode, Json<StartJobResponse>), AppError> {
+    request.validate()?;
+
+    let job_id = deps.job_service.create_job(JobType::CreateServer).await?;
+
+    let job_id_bg = job_id.clone();
+    tokio::spawn(async move {
+        run_job(job_id_bg, request, deps).await;
+    });
+
+    Ok((StatusCode::ACCEPTED, Json(StartJobResponse { job_id })))
+}
+
+async fn run_job(job_id: String, request: CreateRemoteServerRequest, deps: Dependencies) {
+    let result = handle_remote(&job_id, &request, &deps).await;
+
+    match result {
+        Ok(()) => {
+            let _ = deps.job_service.finish_job(&job_id, "completed").await;
+        }
+        Err(e) => {
+            let _ = deps
+                .job_service
+                .emit(&job_id, "error", json!({ "message": e.to_string() }))
+                .await;
+            let _ = deps.job_service.finish_job(&job_id, "failed").await;
+        }
+    }
+}
+
+async fn handle_remote(
+    job_id: &str,
+    request: &CreateRemoteServerRequest,
+    deps: &Dependencies,
+) -> Result<(), AppError> {
+    let CreateRemoteServerRequest {
+        name,
+        hostname,
+        port,
+        auth,
+    } = request;
+
+    deps.job_service
+        .emit(
+            job_id,
+            "progress",
+            json!({
+                "steps": create_connecting_remote_steps("initiating_ssh"),
+            }),
+        )
+        .await?;
+
+    let remote_auth = match auth {
+        SshAuthRequest::Password { username, password } => {
+            RemoteAuth::Password { username, password }
+        }
+        SshAuthRequest::KeyPair {
+            username,
+            private_key,
+            public_key,
+        } => RemoteAuth::KeyPair {
+            username,
+            private_key,
+            public_key: public_key.as_deref(),
+        },
+    };
+
+    SshService::test_ssh_connection(hostname, *port, remote_auth).await?;
+
+    deps.job_service
+        .emit(
+            job_id,
+            "progress",
+            json!({
+                "steps": create_connecting_remote_steps("checking_root"),
+            }),
+        )
+        .await?;
+
+    let key_name = format!("{name}-key");
+    let ssh_key = match auth {
+        SshAuthRequest::Password { username, password } => {
+            deps.ssh_service
+                .create_password_auth(&key_name, username, password)
+                .await?
+        }
+        SshAuthRequest::KeyPair {
+            username,
+            private_key,
+            public_key,
+        } => {
+            deps.ssh_service
+                .create_key_auth(&key_name, username, private_key, public_key.as_deref())
+                .await?
+        }
+    };
+
+    deps.job_service
+        .emit(
+            job_id,
+            "progress",
+            json!({
+                "steps": create_connecting_remote_steps("validating_server"),
+            }),
+        )
+        .await?;
+
+    let server = deps
+        .server_service
+        .create_remote_server(name, hostname, *port, ssh_key.id)
+        .await?;
+
+    tracing::info!(id = %server.id, ssh_key_id = ?server.ssh_key_id, "remote server created");
+
+    deps.job_service
+        .emit(
+            job_id,
+            "complete",
+            json!({
+                "id": server.id,
+                "name": server.name,
+                "serverType": server.server_type,
+                "hostname": server.hostname,
+                "port": server.ssh_port,
+            }),
+        )
+        .await?;
+
+    Ok(())
+}

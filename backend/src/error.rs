@@ -31,6 +31,9 @@ pub enum AppError {
 
     #[error("ssh error: {0}")]
     Ssh(#[from] dodosh::SshError),
+
+    #[error("job not found")]
+    JobNotFound,
 }
 
 impl IntoResponse for AppError {
@@ -62,6 +65,7 @@ impl IntoResponse for AppError {
                 tracing::error!("dodosh error: {e}");
                 (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
             }
+            AppError::JobNotFound => (StatusCode::NOT_FOUND, self.to_string()),
         };
 
         (status, Json(json!({ "error": message }))).into_response()

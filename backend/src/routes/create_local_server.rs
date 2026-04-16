@@ -1,0 +1,78 @@
+use axum::{extract::State, http::StatusCode, Json};
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
+
+use crate::dependencies::Dependencies;
+use crate::error::AppError;
+use crate::services::types;
+
+#[derive(Deserialize, ToSchema)]
+pub struct CreateLocalServerRequest {
+    pub name: String,
+    pub hostname: String,
+}
+
+impl CreateLocalServerRequest {
+    fn validate(&self) -> Result<(), AppError> {
+        if self.name.trim().is_empty() {
+            return Err(AppError::Validation("Name is required".into()));
+        }
+        if self.hostname.trim().is_empty() {
+            return Err(AppError::Validation("Hostname is required".into()));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct CreateLocalServerResponse {
+    pub id: i64,
+    pub name: String,
+    #[serde(rename = "serverType")]
+    pub server_type: types::ServerType,
+    pub hostname: String,
+    pub port: Option<u16>,
+}
+
+// ── Handler ───────────────────────────────────────────────────────────────────
+
+#[utoipa::path(
+    post,
+    path = "/api/setup/server/local",
+    request_body = CreateLocalServerRequest,
+    responses(
+        (status = 201, description = "Local server created", body = CreateLocalServerResponse),
+        (status = 409, description = "A local server already exists"),
+        (status = 422, description = "Validation error"),
+    ),
+    tag = "setup"
+)]
+pub async fn create_local_server(
+    State(deps): State<Dependencies>,
+    Json(request): Json<CreateLocalServerRequest>,
+) -> Result<(StatusCode, Json<CreateLocalServerResponse>), AppError> {
+    request.validate()?;
+
+    let count = deps.server_service.count_local_servers().await?;
+    if count > 0 {
+        return Err(AppError::LocalServerAlreadyExists);
+    }
+
+    let server = deps
+        .server_service
+        .create_local_server(&request.name, &request.hostname)
+        .await?;
+
+    tracing::info!(id = %server.id, "local server created");
+
+    Ok((
+        StatusCode::CREATED,
+        Json(CreateLocalServerResponse {
+            id: server.id,
+            name: server.name,
+            server_type: server.server_type,
+            hostname: server.hostname,
+            port: server.ssh_port,
+        }),
+    ))
+}

@@ -6,8 +6,6 @@ use sqlx::SqlitePool;
 use utoipa::ToSchema;
 
 use crate::error::AppError;
-use crate::services::ssh_service::SshService;
-use crate::services::types::RemoteAuth;
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, sqlx::Type, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -29,12 +27,11 @@ pub struct Server {
 
 pub struct ServerService {
     db: Arc<SqlitePool>,
-    ssh_service: Arc<SshService>,
 }
 
 impl ServerService {
-    pub fn new(db: Arc<SqlitePool>, ssh_service: Arc<SshService>) -> Self {
-        Self { db, ssh_service }
+    pub fn new(db: Arc<SqlitePool>) -> Self {
+        Self { db }
     }
 
     pub async fn count_local_servers(&self) -> Result<i64, AppError> {
@@ -75,37 +72,17 @@ impl ServerService {
         name: &str,
         hostname: &str,
         ssh_port: u16,
-        auth: RemoteAuth<'_>,
+        ssh_key_id: i64,
     ) -> Result<Server, AppError> {
-        let key_name = format!("{name}-key");
-
-        let ssh_key = match auth {
-            RemoteAuth::Password { username, password } => {
-                SshService::test_ssh_connection(hostname, ssh_port, auth).await?;
-                self.ssh_service
-                    .create_password_auth(&key_name, username, password)
-                    .await?
-            }
-            RemoteAuth::KeyPair {
-                username,
-                private_key,
-                public_key,
-            } => {
-                SshService::test_ssh_connection(hostname, ssh_port, auth).await?;
-                self.ssh_service
-                    .create_key_auth(&key_name, username, private_key, public_key)
-                    .await?
-            }
-        };
-
         let server_id: i64 = sqlx::query_scalar(
-            "INSERT INTO servers (name, server_type, hostname, ssh_port, ssh_key_id, created_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+            "INSERT INTO servers (name, server_type, hostname, ssh_port, ssh_key_id, created_at) \
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
         )
         .bind(name)
         .bind(ServerType::Remote)
         .bind(hostname)
         .bind(ssh_port)
-        .bind(ssh_key.id)
+        .bind(ssh_key_id)
         .bind(Utc::now())
         .fetch_one(&*self.db)
         .await
@@ -117,7 +94,7 @@ impl ServerService {
             server_type: ServerType::Remote,
             hostname: hostname.to_string(),
             ssh_port: Some(ssh_port),
-            ssh_key_id: Some(ssh_key.id),
+            ssh_key_id: Some(ssh_key_id),
         })
     }
 }

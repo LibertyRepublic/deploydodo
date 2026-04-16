@@ -35,23 +35,18 @@ function CheckListItem({ label, status }: { label: string; status: CheckListItem
 }
 
 const connectingSteps: { label: string; status: CheckListItemStatus }[] = [
-  { label: 'Establishing network connection', status: 'done' },
-  { label: 'Initiating SSH handshake', status: 'loading' },
+  { label: 'Establishing network connection', status: 'pending' },
+  { label: 'Initiating SSH handshake', status: 'pending' },
   { label: 'Authenticating credentials', status: 'pending' },
   { label: 'Verifying Docker installation', status: 'pending' },
   { label: 'Checking root permissions', status: 'pending' },
   { label: 'Validating server configuration', status: 'pending' },
 ]
 
-export function ConnectingView({
-  onSuccess,
-}: {
-  onSuccess: () => void
-  onError: () => void
-}) {
+export function ConnectingView({ onSuccess }: { onSuccess: () => void; onError: () => void }) {
   useConstructor(() => {
     setTimeout(() => {
-      onSuccess()
+      // onSuccess()
     }, 2000)
   })
 

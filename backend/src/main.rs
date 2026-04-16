@@ -47,8 +47,16 @@ async fn main() {
         )
         .route("/api/setup/admin", post(routes::create_admin::create_admin))
         .route(
-            "/api/setup/server",
-            post(routes::create_server::create_server),
+            "/api/setup/server/local",
+            post(routes::create_local_server::create_local_server),
+        )
+        .route(
+            "/api/setup/server/remote",
+            post(routes::create_remote_server::create_remote_server),
+        )
+        .route(
+            "/api/jobs/{job_id}/events",
+            get(routes::job_events::job_events),
         )
         .route("/api/openapi.json", get(openapi_json))
         .with_state(deps)

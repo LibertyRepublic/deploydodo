@@ -1,0 +1,160 @@
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+use chrono::Utc;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use sqlx::SqlitePool;
+use tokio::sync::broadcast;
+use utoipa::ToSchema;
+use uuid::Uuid;
+
+use crate::error::AppError;
+
+#[derive(Clone, Debug)]
+pub struct BroadcastEvent {
+    pub db_id: i64,
+    pub event_type: String,
+    pub data: String,
+}
+
+pub struct StoredEvent {
+    pub id: i64,
+    pub event_type: String,
+    pub data: String,
+}
+
+#[derive(sqlx::Type, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "snake_case")]
+#[sqlx(type_name = "TEXT", rename_all = "snake_case")]
+pub enum JobType {
+    CreateServer,
+}
+
+type SenderMap = Mutex<HashMap<String, broadcast::Sender<BroadcastEvent>>>;
+
+pub struct JobService {
+    db: Arc<SqlitePool>,
+    senders: SenderMap,
+}
+
+impl JobService {
+    pub fn new(db: Arc<SqlitePool>) -> Self {
+        Self {
+            db,
+            senders: Mutex::new(HashMap::new()),
+        }
+    }
+
+    pub async fn create_job(&self, job_type: JobType) -> Result<String, AppError> {
+        let id = Uuid::new_v4().to_string();
+        let now = Utc::now();
+
+        sqlx::query(
+            "INSERT INTO jobs (id, job_type, status, created_at, updated_at) \
+             VALUES ($1, $2, 'pending', $3, $4)",
+        )
+        .bind(&id)
+        .bind(job_type)
+        .bind(now)
+        .bind(now)
+        .execute(&*self.db)
+        .await
+        .map_err(AppError::Database)?;
+
+        let (tx, _) = broadcast::channel(128);
+        self.senders.lock().unwrap().insert(id.clone(), tx);
+
+        Ok(id)
+    }
+
+    /// Persist an event to the database and broadcast it to all current subscribers.
+    pub async fn emit(&self, job_id: &str, event_type: &str, data: Value) -> Result<(), AppError> {
+        let data_str = data.to_string();
+        let now = Utc::now();
+
+        let db_id: i64 = sqlx::query_scalar(
+            "INSERT INTO job_events (job_id, event_type, data, created_at) \
+             VALUES ($1, $2, $3, $4) RETURNING id",
+        )
+        .bind(job_id)
+        .bind(event_type)
+        .bind(&data_str)
+        .bind(now)
+        .fetch_one(&*self.db)
+        .await
+        .map_err(AppError::Database)?;
+
+        let event = BroadcastEvent {
+            db_id,
+            event_type: event_type.to_string(),
+            data: data_str,
+        };
+
+        // Ignore SendError — it just means there are no live subscribers yet.
+        if let Some(tx) = self.senders.lock().unwrap().get(job_id) {
+            let _ = tx.send(event);
+        }
+
+        Ok(())
+    }
+
+    /// Mark the job as finished and drop its broadcast sender, closing the channel
+    /// for all subscribers.
+    pub async fn finish_job(&self, job_id: &str, status: &str) -> Result<(), AppError> {
+        let now = Utc::now();
+
+        sqlx::query("UPDATE jobs SET status = $1, updated_at = $2 WHERE id = $3")
+            .bind(status)
+            .bind(now)
+            .bind(job_id)
+            .execute(&*self.db)
+            .await
+            .map_err(AppError::Database)?;
+
+        // Dropping the sender signals `RecvError::Closed` to all receivers.
+        self.senders.lock().unwrap().remove(job_id);
+
+        Ok(())
+    }
+
+    /// Load all persisted events for a job in insertion order.
+    pub async fn get_events(&self, job_id: &str) -> Result<Vec<StoredEvent>, AppError> {
+        let rows: Vec<(i64, String, String)> = sqlx::query_as(
+            "SELECT id, event_type, data FROM job_events \
+             WHERE job_id = $1 ORDER BY id ASC",
+        )
+        .bind(job_id)
+        .fetch_all(&*self.db)
+        .await
+        .map_err(AppError::Database)?;
+
+        Ok(rows
+            .into_iter()
+            .map(|(id, event_type, data)| StoredEvent {
+                id,
+                event_type,
+                data,
+            })
+            .collect())
+    }
+
+    /// Subscribe to live events for a job.
+    /// Returns `None` if the job has already finished (sender already dropped).
+    pub fn subscribe(&self, job_id: &str) -> Option<broadcast::Receiver<BroadcastEvent>> {
+        self.senders
+            .lock()
+            .unwrap()
+            .get(job_id)
+            .map(|tx| tx.subscribe())
+    }
+
+    /// Fetch the current status string for a job, or `None` if not found.
+    pub async fn get_job_status(&self, job_id: &str) -> Result<Option<String>, AppError> {
+        sqlx::query_scalar("SELECT status FROM jobs WHERE id = $1")
+            .bind(job_id)
+            .fetch_optional(&*self.db)
+            .await
+            .map_err(AppError::Database)
+    }
+}
