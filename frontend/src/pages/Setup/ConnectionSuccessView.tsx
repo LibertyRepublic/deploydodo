@@ -1,4 +1,5 @@
 import { CheckCircleOutlineIcon } from '@/assets/icons'
+import type { JobCompletePayload } from '@/api/types'
 import { Card } from './PageLayout'
 
 function InfoTile({ label, value }: { label: string; value: string }) {
@@ -14,7 +15,13 @@ function InfoTile({ label, value }: { label: string; value: string }) {
   )
 }
 
-export function ConnectionSuccessView({ onContinue }: { onContinue: () => void }) {
+export function ConnectionSuccessView({
+  server,
+  onContinue,
+}: {
+  server: JobCompletePayload
+  onContinue: () => void
+}) {
   return (
     <Card className="p-10">
       <div className="flex flex-col items-center gap-6">
@@ -31,12 +38,12 @@ export function ConnectionSuccessView({ onContinue }: { onContinue: () => void }
 
         <div className="flex flex-col gap-6 w-[480px]">
           <div className="flex gap-6">
-            <InfoTile label="Server IP" value="192.168.1.100" />
-            <InfoTile label="Connection Type" value="SSH (Port 22)" />
+            <InfoTile label="Server Name" value={server.name} />
+            <InfoTile label="Host" value={server.hostname} />
           </div>
           <div className="flex gap-6">
-            <InfoTile label="Docker Version" value="24.0.7" />
-            <InfoTile label="OS" value="Ubuntu 22.04 LTS" />
+            <InfoTile label="SSH Port" value={String(server.port)} />
+            <InfoTile label="Type" value={server.serverType} />
           </div>
         </div>
 

@@ -11,3 +11,5 @@ frontend/dist
 .env.local
 
 .claude
+.DS_Store
+**/.DS_Store

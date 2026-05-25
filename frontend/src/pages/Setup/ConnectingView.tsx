@@ -1,10 +1,20 @@
-import { CheckCircleHollowIcon, SpinnerIcon, PendingSpinnerIcon } from '@/assets/icons'
-import { useConstructor } from '@/hooks/useConstructor'
+import { useState } from 'react'
+import {
+  CheckCircleHollowIcon,
+  SpinnerIcon,
+  PendingSpinnerIcon,
+  WarningTriangleIcon,
+} from '@/assets/icons'
+import { useJobEvents } from '@/hooks/useJobEvents'
+import type {
+  ConnectingStep,
+  ConnectingStepStatus,
+  JobCompletePayload,
+  JobErrorPayload,
+} from '@/api/types'
 import { Card } from './PageLayout'
 
-type CheckListItemStatus = 'done' | 'loading' | 'pending'
-
-function CheckListItem({ label, status }: { label: string; status: CheckListItemStatus }) {
+function CheckListItem({ label, status }: { label: string; status: ConnectingStepStatus }) {
   return (
     <div className="flex items-center gap-2">
       {status === 'done' && (
@@ -22,6 +32,11 @@ function CheckListItem({ label, status }: { label: string; status: CheckListItem
           <PendingSpinnerIcon className="size-full" />
         </div>
       )}
+      {status === 'warning' && (
+        <div className="relative shrink-0 size-6 flex items-center justify-center">
+          <WarningTriangleIcon className="size-5 text-amber-500" />
+        </div>
+      )}
       <span
         className={[
           'font-manrope text-sm leading-6',
@@ -34,36 +49,44 @@ function CheckListItem({ label, status }: { label: string; status: CheckListItem
   )
 }
 
-const connectingSteps: { label: string; status: CheckListItemStatus }[] = [
-  { label: 'Establishing network connection', status: 'pending' },
-  { label: 'Initiating SSH handshake', status: 'pending' },
-  { label: 'Authenticating credentials', status: 'pending' },
-  { label: 'Verifying Docker installation', status: 'pending' },
-  { label: 'Checking root permissions', status: 'pending' },
-  { label: 'Validating server configuration', status: 'pending' },
+const INITIAL_STEPS: ConnectingStep[] = [
+  { key: 'initiating_ssh', label: 'Initiating SSH connection', status: 'pending' },
+  { key: 'checking_root', label: 'Checking root permissions', status: 'pending' },
+  { key: 'verifying_docker', label: 'Verifying Docker installation', status: 'pending' },
+  { key: 'validating_server', label: 'Validating server configuration', status: 'pending' },
 ]
 
-export function ConnectingView({ onSuccess }: { onSuccess: () => void; onError: () => void }) {
-  useConstructor(() => {
-    setTimeout(() => {
-      // onSuccess()
-    }, 2000)
+export function ConnectingView({
+  jobId,
+  onSuccess,
+  onError,
+}: {
+  jobId: string
+  onSuccess: (server: JobCompletePayload) => void
+  onError: (errorPayload: JobErrorPayload) => void
+}) {
+  const [steps, setSteps] = useState<ConnectingStep[]>(INITIAL_STEPS)
+
+  useJobEvents(jobId, {
+    onProgress: (incoming) => setSteps(incoming),
+    onComplete: onSuccess,
+    onError: onError,
   })
 
   return (
     <Card className="p-10">
-      <div className="flex flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-8">
           <h2 className="font-sans font-semibold text-2xl leading-8 text-high-contrast m-0">
             Connecting to Server
           </h2>
           <p className="font-sans font-normal text-base leading-6 text-high-contrast m-0">
-            Establishing and validating SSH connection...
+            Establishing and validating SSH connection…
           </p>
         </div>
         <div className="flex flex-col gap-5 w-[327px]">
-          {connectingSteps.map((step) => (
-            <CheckListItem key={step.label} label={step.label} status={step.status} />
+          {steps.map((step) => (
+            <CheckListItem key={step.key} label={step.label} status={step.status} />
           ))}
         </div>
       </div>

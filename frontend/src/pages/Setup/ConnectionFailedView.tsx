@@ -2,9 +2,11 @@ import { WarningTriangleIcon } from '@/assets/icons'
 import { Card } from './PageLayout'
 
 export function ConnectionFailedView({
+  errorMessage,
   onGoBack,
   onRetry,
 }: {
+  errorMessage: string
   onGoBack: () => void
   onRetry: () => void
 }) {
@@ -23,11 +25,10 @@ export function ConnectionFailedView({
 
         <div className="w-[480px] bg-[rgba(211,48,48,0.12)] border border-[#d33030] rounded-lg p-4 flex flex-col gap-1">
           <span className="font-manrope font-bold text-base leading-6 text-[#d33030]">
-            Authentication failed
+            Error details
           </span>
           <p className="font-manrope font-normal text-sm leading-5 text-[#d33030] m-0">
-            Please check your SSH credentials and try again. Ensure the server is accessible and the
-            provided key has proper permissions.
+            {errorMessage}
           </p>
         </div>
 
