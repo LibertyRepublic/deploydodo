@@ -1,5 +1,10 @@
 import { useEffect } from 'react'
-import type { ConnectingStep, JobCompletePayload, JobErrorPayload, JobProgressPayload } from '@/api/types'
+import type {
+  ConnectingStep,
+  JobCompletePayload,
+  JobErrorPayload,
+  JobProgressPayload,
+} from '@/api/types'
 
 type UseJobEventsOptions = {
   onProgress: (steps: ConnectingStep[]) => void
@@ -7,7 +12,10 @@ type UseJobEventsOptions = {
   onError: (payload: JobErrorPayload) => void
 }
 
-export function useJobEvents(jobId: string, { onProgress, onComplete, onError }: UseJobEventsOptions) {
+export function useJobEvents(
+  jobId: string,
+  { onProgress, onComplete, onError }: UseJobEventsOptions,
+) {
   useEffect(() => {
     const es = new EventSource(`/api/jobs/${jobId}/events`)
 

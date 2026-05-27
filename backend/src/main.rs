@@ -23,9 +23,11 @@ async fn openapi_json() -> Json<utoipa::openapi::OpenApi> {
 #[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "backend=debug,tower_http=debug".into()),
-        ))
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or(
+                tracing_subscriber::EnvFilter::new("backend=debug,tower_http=debug"),
+            ),
+        )
         .with(tracing_subscriber::fmt::layer())
         .init();
 

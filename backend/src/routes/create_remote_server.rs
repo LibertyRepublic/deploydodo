@@ -88,7 +88,7 @@ pub struct StartJobResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConnectingStep {
-    pub key: String,
+    pub key: StepKey,
     pub label: String,
     pub status: CheckListItemStatus,
 }
@@ -102,25 +102,45 @@ pub enum CheckListItemStatus {
     Done,
 }
 
-pub fn create_connecting_remote_steps(active_key: &str) -> Vec<ConnectingStep> {
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+enum StepKey {
+    InitiatingSsh,
+    CheckingRoot,
+    VerifyingDocker,
+    ValidatingServer,
+}
+
+impl StepKey {
+    fn as_str(&self) -> &str {
+        match self {
+            StepKey::InitiatingSsh => "initiating_ssh",
+            StepKey::CheckingRoot => "checking_root",
+            StepKey::VerifyingDocker => "verifying_docker",
+            StepKey::ValidatingServer => "validating_server",
+        }
+    }
+}
+
+pub fn create_connecting_remote_steps(active_key: StepKey) -> Vec<ConnectingStep> {
     let mut steps = vec![
         ConnectingStep {
-            key: "initiating_ssh".into(),
+            key: StepKey::InitiatingSsh,
             label: "Initiating SSH connection".into(),
             status: CheckListItemStatus::Pending,
         },
         ConnectingStep {
-            key: "checking_root".into(),
+            key: StepKey::CheckingRoot,
             label: "Checking root permissions".into(),
             status: CheckListItemStatus::Pending,
         },
         ConnectingStep {
-            key: "verifying_docker".into(),
+            key: StepKey::VerifyingDocker,
             label: "Verifying Docker installation".into(),
             status: CheckListItemStatus::Pending,
         },
         ConnectingStep {
-            key: "validating_server".into(),
+            key: StepKey::ValidatingServer,
             label: "Validating server configuration".into(),
             status: CheckListItemStatus::Pending,
         },
@@ -177,6 +197,7 @@ async fn run_job(job_id: String, request: CreateRemoteServerRequest, deps: Depen
             let _ = deps.job_service.finish_job(&job_id, "completed").await;
         }
         Err(e) => {
+            tracing::error!("{e}");
             let _ = deps
                 .job_service
                 .emit(&job_id, "error", json!({ "message": e.to_string() }))
@@ -203,7 +224,7 @@ async fn handle_remote(
             job_id,
             "progress",
             json!({
-                "steps": create_connecting_remote_steps("initiating_ssh"),
+                "steps": create_connecting_remote_steps(StepKey::InitiatingSsh),
             }),
         )
         .await?;
@@ -230,7 +251,7 @@ async fn handle_remote(
             job_id,
             "progress",
             json!({
-                "steps": create_connecting_remote_steps("checking_root"),
+                "steps": create_connecting_remote_steps(StepKey::CheckingRoot),
             }),
         )
         .await?;
@@ -258,7 +279,7 @@ async fn handle_remote(
             job_id,
             "progress",
             json!({
-                "steps": create_connecting_remote_steps("validating_server"),
+                "steps": create_connecting_remote_steps(StepKey::ValidatingServer),
             }),
         )
         .await?;

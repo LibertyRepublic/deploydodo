@@ -24,7 +24,7 @@ function CheckListItem({ label, status }: { label: string; status: ConnectingSte
       )}
       {status === 'loading' && (
         <div className="shrink-0 size-6 flex items-center justify-center">
-          <SpinnerIcon className="size-[18px] animate-spin" />
+          <SpinnerIcon className="size-4.5 animate-spin" />
         </div>
       )}
       {status === 'pending' && (
@@ -49,13 +49,6 @@ function CheckListItem({ label, status }: { label: string; status: ConnectingSte
   )
 }
 
-const INITIAL_STEPS: ConnectingStep[] = [
-  { key: 'initiating_ssh', label: 'Initiating SSH connection', status: 'pending' },
-  { key: 'checking_root', label: 'Checking root permissions', status: 'pending' },
-  { key: 'verifying_docker', label: 'Verifying Docker installation', status: 'pending' },
-  { key: 'validating_server', label: 'Validating server configuration', status: 'pending' },
-]
-
 export function ConnectingView({
   jobId,
   onSuccess,
@@ -65,7 +58,7 @@ export function ConnectingView({
   onSuccess: (server: JobCompletePayload) => void
   onError: (errorPayload: JobErrorPayload) => void
 }) {
-  const [steps, setSteps] = useState<ConnectingStep[]>(INITIAL_STEPS)
+  const [steps, setSteps] = useState<ConnectingStep[]>([])
 
   useJobEvents(jobId, {
     onProgress: (incoming) => setSteps(incoming),
@@ -75,8 +68,8 @@ export function ConnectingView({
 
   return (
     <Card className="p-10">
-        <div className="flex flex-col items-center gap-2">
-      <div className="flex flex-col items-center gap-8">
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-8">
           <h2 className="font-sans font-semibold text-2xl leading-8 text-high-contrast m-0">
             Connecting to Server
           </h2>
@@ -84,7 +77,7 @@ export function ConnectingView({
             Establishing and validating SSH connection…
           </p>
         </div>
-        <div className="flex flex-col gap-5 w-[327px]">
+        <div className="flex flex-col gap-5 w-81.75">
           {steps.map((step) => (
             <CheckListItem key={step.key} label={step.label} status={step.status} />
           ))}
