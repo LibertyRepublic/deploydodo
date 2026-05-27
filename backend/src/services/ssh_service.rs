@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use chrono::Utc;
-use dodosh::SshAuth;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use utoipa::ToSchema;
@@ -14,18 +13,6 @@ use crate::error::AppError;
 pub enum AuthType {
     Password,
     KeyPair,
-}
-
-pub enum RemoteAuth<'a> {
-    Password {
-        username: &'a str,
-        password: &'a str,
-    },
-    KeyPair {
-        username: &'a str,
-        private_key: &'a str,
-        public_key: Option<&'a str>,
-    },
 }
 
 pub struct SshKey {
@@ -121,37 +108,5 @@ impl SshService {
             private_key: Some(private_key.to_string()),
             public_key: public_key.map(|key| key.to_string()),
         })
-    }
-
-    pub async fn test_ssh_connection(
-        hostname: &str,
-        port: u16,
-        auth: RemoteAuth<'_>,
-    ) -> Result<(), AppError> {
-        match auth {
-            RemoteAuth::Password { username, password } => {
-                dodosh::test_connection(hostname, port, username, SshAuth::Password(password))
-                    .await
-                    .map_err(AppError::Ssh)?;
-            }
-            RemoteAuth::KeyPair {
-                username,
-                private_key,
-                ..
-            } => {
-                dodosh::test_connection(
-                    hostname,
-                    port,
-                    username,
-                    SshAuth::Key {
-                        private_key,
-                        passphrase: None,
-                    },
-                )
-                .await
-                .map_err(AppError::Ssh)?;
-            }
-        }
-        Ok(())
     }
 }

@@ -1,12 +1,13 @@
 use axum::{extract::State, http::StatusCode, Json};
+use dodosh::{SshAuth, SshSession};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use utoipa::ToSchema;
 
 use crate::dependencies::Dependencies;
 use crate::error::AppError;
-use crate::services::ssh_service::SshService;
-use crate::services::types::{JobType, RemoteAuth};
+use crate::services::ssh_service::SshKey;
+use crate::services::types::JobType;
 
 // ── SSH auth sub-types ────────────────────────────────────────────────────────
 
@@ -51,6 +52,22 @@ impl SshAuthRequest {
             }
         }
         Ok(())
+    }
+
+    pub fn get_username(&self) -> &str {
+        match self {
+            Self::Password { username, .. } | Self::KeyPair { username, .. } => username,
+        }
+    }
+
+    pub fn get_ssh_auth<'a>(&'a self) -> SshAuth<'a> {
+        match self {
+            Self::Password { password, .. } => SshAuth::Password(password),
+            Self::KeyPair { private_key, .. } => SshAuth::Key {
+                private_key,
+                passphrase: None,
+            },
+        }
     }
 }
 
@@ -190,9 +207,7 @@ pub async fn create_remote_server(
 }
 
 async fn run_job(job_id: String, request: CreateRemoteServerRequest, deps: Dependencies) {
-    let result = handle_remote(&job_id, &request, &deps).await;
-
-    match result {
+    match handle_remote(&job_id, &request, &deps).await {
         Ok(()) => {
             let _ = deps.job_service.finish_job(&job_id, "completed").await;
         }
@@ -229,22 +244,8 @@ async fn handle_remote(
         )
         .await?;
 
-    let remote_auth = match auth {
-        SshAuthRequest::Password { username, password } => {
-            RemoteAuth::Password { username, password }
-        }
-        SshAuthRequest::KeyPair {
-            username,
-            private_key,
-            public_key,
-        } => RemoteAuth::KeyPair {
-            username,
-            private_key,
-            public_key: public_key.as_deref(),
-        },
-    };
-
-    SshService::test_ssh_connection(hostname, *port, remote_auth).await?;
+    let session =
+        SshSession::connect(hostname, *port, auth.get_username(), auth.get_ssh_auth()).await?;
 
     deps.job_service
         .emit(
@@ -256,23 +257,22 @@ async fn handle_remote(
         )
         .await?;
 
-    let key_name = format!("{name}-key");
-    let ssh_key = match auth {
-        SshAuthRequest::Password { username, password } => {
-            deps.ssh_service
-                .create_password_auth(&key_name, username, password)
-                .await?
-        }
-        SshAuthRequest::KeyPair {
-            username,
-            private_key,
-            public_key,
-        } => {
-            deps.ssh_service
-                .create_key_auth(&key_name, username, private_key, public_key.as_deref())
-                .await?
-        }
-    };
+    let is_root = session.check_root_access().await.map_err(AppError::Ssh)?;
+    if !is_root {
+        return Err(AppError::Validation("Root access required".to_string()));
+    }
+
+    deps.job_service
+        .emit(
+            job_id,
+            "progress",
+            json!({
+                "steps": create_connecting_remote_steps(StepKey::VerifyingDocker),
+            }),
+        )
+        .await?;
+
+    session.disconnect().await?;
 
     deps.job_service
         .emit(
@@ -283,6 +283,9 @@ async fn handle_remote(
             }),
         )
         .await?;
+
+    let key_name = format!("{name}-key");
+    let ssh_key = create_ssh_key(&key_name, auth, deps).await?;
 
     let server = deps
         .server_service
@@ -306,4 +309,27 @@ async fn handle_remote(
         .await?;
 
     Ok(())
+}
+
+async fn create_ssh_key(
+    key_name: &str,
+    auth: &SshAuthRequest,
+    deps: &Dependencies,
+) -> Result<SshKey, AppError> {
+    match auth {
+        SshAuthRequest::Password { username, password } => {
+            deps.ssh_service
+                .create_password_auth(&key_name, username, password)
+                .await
+        }
+        SshAuthRequest::KeyPair {
+            username,
+            private_key,
+            public_key,
+        } => {
+            deps.ssh_service
+                .create_key_auth(&key_name, username, private_key, public_key.as_deref())
+                .await
+        }
+    }
 }
