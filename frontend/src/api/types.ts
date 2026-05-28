@@ -20,4 +20,4 @@ export type JobCompletePayload = {
   hostname: string
   port: number
 }
-export type JobErrorPayload = { message: string }
+export type JobErrorPayload = { message: string; errorType?: 'networkError' | 'appError' }

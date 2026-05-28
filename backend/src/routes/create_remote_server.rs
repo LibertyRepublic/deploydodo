@@ -127,18 +127,6 @@ enum StepKey {
     InitiatingSsh,
     CheckingRoot,
     InstallingDocker,
-    ValidatingServer,
-}
-
-impl StepKey {
-    fn as_str(&self) -> &str {
-        match self {
-            StepKey::InitiatingSsh => "initiating_ssh",
-            StepKey::CheckingRoot => "checking_root",
-            StepKey::InstallingDocker => "installing_docker",
-            StepKey::ValidatingServer => "validating_server",
-        }
-    }
 }
 
 fn create_connecting_remote_steps(active_key: StepKey) -> Vec<ConnectingStep> {
@@ -156,11 +144,6 @@ fn create_connecting_remote_steps(active_key: StepKey) -> Vec<ConnectingStep> {
         ConnectingStep {
             key: StepKey::InstallingDocker,
             label: "Verifying Docker installation".into(),
-            status: CheckListItemStatus::Pending,
-        },
-        ConnectingStep {
-            key: StepKey::ValidatingServer,
-            label: "Validating server configuration".into(),
             status: CheckListItemStatus::Pending,
         },
     ];
@@ -284,16 +267,6 @@ async fn handle_remote(
     verify_docker_runtime(&session, true).await?;
 
     session.disconnect().await?;
-
-    deps.job_service
-        .emit(
-            job_id,
-            "progress",
-            json!({
-                "steps": create_connecting_remote_steps(StepKey::ValidatingServer),
-            }),
-        )
-        .await?;
 
     let key_name = format!("{name}-key");
     let ssh_key = create_ssh_key(&key_name, auth, deps).await?;

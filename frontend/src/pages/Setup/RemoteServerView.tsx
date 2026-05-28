@@ -3,7 +3,6 @@ import * as Yup from 'yup'
 import { ArrowBackIcon, WarningCircleIcon } from '@/assets/icons'
 import { cn } from '@/utilities/cn'
 import { useCreateRemoteServer } from '@/api/mutations'
-import type { StartJobResponse } from '@/api/types'
 import { Card } from './PageLayout'
 
 type AuthMethod = 'ssh-key' | 'password'
@@ -108,11 +107,7 @@ const whatHappensNext = [
   },
   {
     label: 'Docker Check:',
-    body: "We'll verify Docker is installed or offer to install it automatically.",
-  },
-  {
-    label: 'Environment Setup:',
-    body: 'Required configurations and networks will be created for deployments.',
+    body: "We'll verify Docker is installed or install it automatically.",
   },
 ]
 
@@ -139,8 +134,16 @@ export function RemoteServerView({
     onSubmit: (values) => {
       const auth =
         values.authMethod === 'ssh-key'
-          ? ({ authType: 'keypair', username: values.username, privateKey: values.privateKey } as const)
-          : ({ authType: 'password', username: values.username, password: values.password } as const)
+          ? ({
+              authType: 'keypair',
+              username: values.username,
+              privateKey: values.privateKey,
+            } as const)
+          : ({
+              authType: 'password',
+              username: values.username,
+              password: values.password,
+            } as const)
 
       createRemoteServer.mutate(
         {
@@ -277,7 +280,7 @@ export function RemoteServerView({
                   onBlur={formik.handleBlur}
                   placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
                   className={cn(
-                    'bg-background border rounded-lg px-[15px] py-[15px] h-[132px] font-sans font-normal text-base leading-6 text-text-secondary outline-none resize-none transition-[border-color] duration-150 focus:border-high-contrast w-full',
+                    'bg-background border rounded-lg px-3.75 py-3.75 h-33 font-sans font-normal text-base leading-6 text-text-secondary outline-none resize-none transition-[border-color] duration-150 focus:border-high-contrast w-full',
                     formik.touched.privateKey && formik.errors.privateKey
                       ? 'border-error!'
                       : 'border-neutral-100',
@@ -322,7 +325,7 @@ export function RemoteServerView({
               </div>
             )}
 
-            {createRemoteServer.data?.error && (
+            {!!createRemoteServer.data?.error && (
               <p className="font-manrope font-normal text-sm leading-6 text-error">
                 Failed to start connection. Please check your details and try again.
               </p>

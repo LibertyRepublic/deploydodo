@@ -1,4 +1,6 @@
 import { useState } from 'react'
+
+const PENDING_JOB_KEY = 'deploydodo:pending_job_id'
 import type { JobCompletePayload, JobErrorPayload } from '@/api/types'
 import { PageLayout } from './PageLayout'
 import { Stepper } from './Stepper'
@@ -33,8 +35,10 @@ function stepperProps(view: View) {
 }
 
 export function SelectServer() {
-  const [view, setView] = useState<View>('select')
-  const [jobId, setJobId] = useState<string | null>(null)
+  const [jobId, setJobId] = useState<string | null>(() => localStorage.getItem(PENDING_JOB_KEY))
+  const [view, setView] = useState<View>(() =>
+    localStorage.getItem(PENDING_JOB_KEY) ? 'connecting' : 'select',
+  )
   const [server, setServer] = useState<JobCompletePayload | null>(null)
   const [jobError, setJobError] = useState<JobErrorPayload | null>(null)
 
@@ -44,23 +48,28 @@ export function SelectServer() {
   }
 
   function handleConnect(newJobId: string) {
+    localStorage.setItem(PENDING_JOB_KEY, newJobId)
     setJobId(newJobId)
     setJobError(null)
     setView('connecting')
   }
 
   function handleJobComplete(payload: JobCompletePayload) {
+    localStorage.removeItem(PENDING_JOB_KEY)
     setServer(payload)
     setView('connection-success')
   }
 
   function handleJobError(payload: JobErrorPayload) {
-    setJobError(payload)
-    setView('connection-failed')
+    if (payload.errorType !== 'networkError') {
+      localStorage.removeItem(PENDING_JOB_KEY)
+      setJobError(payload)
+      setView('connection-failed')
+    }
   }
 
   function handleRetry() {
-    // Go back to the form so the user can re-submit (possibly correcting credentials)
+    localStorage.removeItem(PENDING_JOB_KEY)
     setView('remote-server')
   }
 
@@ -75,11 +84,7 @@ export function SelectServer() {
       )}
 
       {view === 'connecting' && jobId && (
-        <ConnectingView
-          jobId={jobId}
-          onSuccess={handleJobComplete}
-          onError={handleJobError}
-        />
+        <ConnectingView jobId={jobId} onSuccess={handleJobComplete} onError={handleJobError} />
       )}
 
       {view === 'connection-success' && server && (

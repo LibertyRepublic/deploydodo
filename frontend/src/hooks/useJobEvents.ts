@@ -38,7 +38,10 @@ export function useJobEvents(
       if (data) {
         onError(JSON.parse(data) as JobErrorPayload)
       } else {
-        onError({ message: 'Lost connection to server. Please try again.' })
+        onError({
+          errorType: 'networkError',
+          message: 'Lost connection to server. Please try again.',
+        })
       }
     })
 

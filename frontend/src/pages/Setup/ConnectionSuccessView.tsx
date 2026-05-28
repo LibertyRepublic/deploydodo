@@ -36,7 +36,7 @@ export function ConnectionSuccessView({
           </p>
         </div>
 
-        <div className="flex flex-col gap-6 w-[480px]">
+        <div className="flex flex-col gap-6 w-120">
           <div className="flex gap-6">
             <InfoTile label="Server Name" value={server.name} />
             <InfoTile label="Host" value={server.hostname} />
@@ -50,9 +50,9 @@ export function ConnectionSuccessView({
         <button
           type="button"
           onClick={onContinue}
-          className="w-[480px] bg-secondary text-pure-white font-manrope font-bold text-sm leading-6 rounded-lg px-4 py-2 hover:opacity-[0.88] active:opacity-75 transition-opacity duration-150"
+          className="w-120 bg-secondary text-pure-white font-manrope font-bold text-sm leading-6 rounded-lg px-4 py-2 hover:opacity-[0.88] active:opacity-75 transition-opacity duration-150"
         >
-          Continue to Root User Setup
+          Finish Setup
         </button>
       </div>
     </Card>
