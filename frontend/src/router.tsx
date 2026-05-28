@@ -3,6 +3,7 @@ import { requireAuth, rootRoute } from '@/routeConfig'
 import { onboardingRoute } from '@/pages/Onboarding/route'
 import { welcomeRoute } from '@/pages/Welcome/route'
 import { selectServerRoute } from '@/pages/Setup/route'
+import { dashboardRoute } from '@/pages/Dashboard/route'
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -15,13 +16,6 @@ const loginRoute = createRoute({
   path: '/login',
   beforeLoad: requireAuth,
   component: () => null, // TODO: implement login page
-})
-
-const dashboardRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  beforeLoad: requireAuth,
-  path: '/dashboard',
-  component: () => null, // TODO: implement dashboard page
 })
 
 const routeTree = rootRoute.addChildren([
