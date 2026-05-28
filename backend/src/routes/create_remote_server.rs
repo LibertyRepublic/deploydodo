@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use axum::{extract::State, http::StatusCode, Json};
 use dodosh::{SshAuth, SshSession};
 use serde::{Deserialize, Serialize};
@@ -104,10 +106,10 @@ pub struct StartJobResponse {
 // ── Checklist step types (used by the frontend progress UI) ──────────────────
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ConnectingStep {
-    pub key: StepKey,
-    pub label: String,
-    pub status: CheckListItemStatus,
+struct ConnectingStep {
+    key: StepKey,
+    label: String,
+    status: CheckListItemStatus,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -124,7 +126,7 @@ pub enum CheckListItemStatus {
 enum StepKey {
     InitiatingSsh,
     CheckingRoot,
-    VerifyingDocker,
+    InstallingDocker,
     ValidatingServer,
 }
 
@@ -133,13 +135,13 @@ impl StepKey {
         match self {
             StepKey::InitiatingSsh => "initiating_ssh",
             StepKey::CheckingRoot => "checking_root",
-            StepKey::VerifyingDocker => "verifying_docker",
+            StepKey::InstallingDocker => "installing_docker",
             StepKey::ValidatingServer => "validating_server",
         }
     }
 }
 
-pub fn create_connecting_remote_steps(active_key: StepKey) -> Vec<ConnectingStep> {
+fn create_connecting_remote_steps(active_key: StepKey) -> Vec<ConnectingStep> {
     let mut steps = vec![
         ConnectingStep {
             key: StepKey::InitiatingSsh,
@@ -152,7 +154,7 @@ pub fn create_connecting_remote_steps(active_key: StepKey) -> Vec<ConnectingStep
             status: CheckListItemStatus::Pending,
         },
         ConnectingStep {
-            key: StepKey::VerifyingDocker,
+            key: StepKey::InstallingDocker,
             label: "Verifying Docker installation".into(),
             status: CheckListItemStatus::Pending,
         },
@@ -244,8 +246,14 @@ async fn handle_remote(
         )
         .await?;
 
-    let session =
-        SshSession::connect(hostname, *port, auth.get_username(), auth.get_ssh_auth()).await?;
+    let session = SshSession::connect(
+        hostname,
+        *port,
+        auth.get_username(),
+        auth.get_ssh_auth(),
+        Some(Duration::from_mins(5)),
+    )
+    .await?;
 
     deps.job_service
         .emit(
@@ -259,6 +267,7 @@ async fn handle_remote(
 
     let is_root = session.check_root_access().await.map_err(AppError::Ssh)?;
     if !is_root {
+        session.disconnect().await?;
         return Err(AppError::Validation("Root access required".to_string()));
     }
 
@@ -267,10 +276,12 @@ async fn handle_remote(
             job_id,
             "progress",
             json!({
-                "steps": create_connecting_remote_steps(StepKey::VerifyingDocker),
+                "steps": create_connecting_remote_steps(StepKey::InstallingDocker),
             }),
         )
         .await?;
+
+    verify_docker_runtime(&session, true).await?;
 
     session.disconnect().await?;
 
@@ -332,4 +343,62 @@ async fn create_ssh_key(
                 .await
         }
     }
+}
+
+async fn verify_docker_runtime(
+    session: &SshSession,
+    retry_after_install: bool,
+) -> Result<(), AppError> {
+    let docker_status = session.check_docker().await.map_err(AppError::Ssh)?;
+    if docker_status.is_installed {
+        let is_docker_installed_via_snap = session
+            .is_docker_installed_via_snap()
+            .await
+            .map_err(AppError::Ssh)?;
+        if is_docker_installed_via_snap {
+            session.disconnect().await?;
+            return Err(AppError::Validation(
+                "Docker runtime is present but it was installed via snap.
+                Please remove the snap installation and use the system package manager instead."
+                    .to_string(),
+            ));
+        }
+        if !docker_status.is_running {
+            session.disconnect().await?;
+            return Err(AppError::Validation(
+                "Docker runtime is installed but not running".to_string(),
+            ));
+        }
+        Ok(())
+    } else {
+        install_docker(session).await?;
+        if retry_after_install {
+            Box::pin(verify_docker_runtime(session, false)).await?;
+        }
+        Ok(())
+    }
+}
+
+async fn install_docker(session: &SshSession) -> Result<(), AppError> {
+    let output = session
+        .run_command("curl -fsSL https://get.docker.com -o get-docker.sh")
+        .await?;
+
+    if output.exit_code != 0 {
+        return Err(AppError::Validation(format!(
+            "Failed to download Docker installation script - {}",
+            output.stdout
+        )));
+    }
+
+    let output = session.run_command("sh get-docker.sh").await?;
+
+    if output.exit_code != 0 {
+        return Err(AppError::Validation(format!(
+            "Failed to install Docker - {}",
+            output.stdout
+        )));
+    }
+
+    Ok(())
 }

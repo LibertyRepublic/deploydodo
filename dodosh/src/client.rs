@@ -24,6 +24,11 @@ pub enum SshAuth<'a> {
     },
 }
 
+pub struct DockerStatus {
+    pub is_installed: bool,
+    pub is_running: bool,
+}
+
 pub struct Handler;
 
 impl client::Handler for Handler {
@@ -52,12 +57,13 @@ impl SshSession {
         port: u16,
         username: &str,
         auth: SshAuth<'_>,
+        timeout: Option<Duration>,
     ) -> Result<Self, SshError> {
-        session_init(hostname, port, username, auth).await
+        session_init(hostname, port, username, auth, timeout).await
     }
 
     /// Cleanly closes the connection.
-    pub async fn disconnect(self) -> Result<(), SshError> {
+    pub async fn disconnect(&self) -> Result<(), SshError> {
         self.handle
             .disconnect(
                 russh::Disconnect::ByApplication,
@@ -80,6 +86,39 @@ impl SshSession {
         let sudo_output = self.run_command("sudo -n true").await?;
 
         Ok(sudo_output.exit_code == 0)
+    }
+
+    /// Returns `Ok(true)` if the Docker installation came from snap.
+    pub async fn is_docker_installed_via_snap(&self) -> Result<bool, SshError> {
+        // Primary: snap path in the binary location.
+        let which = self.run_command("which docker").await?;
+        if which.exit_code == 0 && which.stdout.contains("/snap/") {
+            return Ok(true);
+        }
+
+        // Secondary: ask snap itself (handles symlinks that don't expose the snap path).
+        let snap = self.run_command("snap list docker").await?;
+        Ok(snap.exit_code == 0)
+    }
+
+    /// Returns `Ok(true)` if Docker is installed and the daemon is reachable.
+    /// Returns `Ok(false)` if the binary is missing or the daemon is not running.
+    pub async fn check_docker(&self) -> Result<DockerStatus, SshError> {
+        // Guard: is the binary present?
+        let which = self.run_command("command -v docker").await?;
+        if which.exit_code != 0 {
+            return Ok(DockerStatus {
+                is_installed: false,
+                is_running: false,
+            });
+        }
+
+        // Full check: is the daemon up and responding?
+        let info = self.run_command("docker info").await?;
+        Ok(DockerStatus {
+            is_installed: true,
+            is_running: info.exit_code == 0,
+        })
     }
 
     pub async fn run_command(&self, command: &str) -> Result<CommandOutput, SshError> {
@@ -117,9 +156,10 @@ async fn session_init(
     port: u16,
     username: &str,
     auth: SshAuth<'_>,
+    timeout: Option<Duration>,
 ) -> Result<SshSession, SshError> {
     let config = Arc::new(client::Config {
-        inactivity_timeout: Some(Duration::from_secs(10)),
+        inactivity_timeout: timeout.or(Some(Duration::from_secs(10))),
         ..<_>::default()
     });
 
