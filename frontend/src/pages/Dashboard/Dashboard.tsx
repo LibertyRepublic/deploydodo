@@ -16,6 +16,7 @@ import {
   NavLogoutIcon,
 } from '@/assets/icons'
 import type { ComponentType, SVGProps } from 'react'
+import { cn } from '@/utilities/cn'
 
 type NavItemDef = {
   Icon: ComponentType<SVGProps<SVGSVGElement>>
@@ -38,17 +39,17 @@ const mainNavItems: NavItemDef[] = [
 function NavItem({ Icon, label, active = false }: NavItemDef) {
   return (
     <button
-      className={[
-        'flex items-center gap-2 w-full px-2 py-2 rounded-lg text-left transition-colors duration-150',
+      className={cn([
+        'flex items-center gap-2 w-full pl-3 pr-2 py-2 rounded-lg text-left transition-colors duration-150',
         active ? 'bg-neutral-200' : 'hover:bg-neutral-200',
-      ].join(' ')}
+      ])}
     >
-      <Icon className="size-5 shrink-0" />
+      <Icon className="size-4 shrink-0" />
       <span
-        className={[
+        className={cn([
           'font-manrope text-sm leading-6',
           active ? 'font-bold text-secondary' : 'font-normal text-high-contrast',
-        ].join(' ')}
+        ])}
       >
         {label}
       </span>
@@ -98,7 +99,7 @@ export function Dashboard() {
       <div className="flex flex-1">
         {/* Sidebar */}
         <nav className="w-60 border-r border-neutral-100 flex flex-col justify-between pt-6 px-6 pb-2 shrink-0">
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-2">
             {mainNavItems.map((item) => (
               <NavItem key={item.label} {...item} />
             ))}
@@ -113,15 +114,15 @@ export function Dashboard() {
         <main className="flex-1 p-8">
           <div className="flex items-end justify-between">
             <div className="flex flex-col gap-2">
-              <h1 className="font-sans font-semibold text-[40px] leading-[48px] tracking-[-0.5px] text-high-contrast m-0">
+              <h1 className="font-sans font-semibold text-[40px] leading-12 tracking-[-0.5px] text-high-contrast m-0">
                 Dashboard
               </h1>
               <p className="font-sans font-normal text-base leading-6 text-text-secondary m-0">
-                Description of the active page
+                View your projects and resources at a glance
               </p>
             </div>
             <button className="flex items-center gap-2 pl-2 pr-4 py-2 border border-text-secondary rounded-lg hover:bg-neutral-200 transition-colors">
-              <PlusIcon className="size-5 shrink-0" />
+              <PlusIcon className="size-4 shrink-0" />
               <span className="font-manrope font-bold text-sm leading-6 text-high-contrast">
                 New
               </span>
