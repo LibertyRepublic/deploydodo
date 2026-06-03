@@ -359,16 +359,18 @@ async fn install_docker(session: &SshSession) -> Result<(), AppError> {
 
     if output.exit_code != 0 {
         return Err(AppError::Validation(format!(
-            "Failed to download Docker installation script - {}",
+            "Failed to download Docker installation script: {}",
             output.stdout
         )));
     }
 
     let output = session.run_command("sh get-docker.sh").await?;
 
+    let _ = session.run_command("rm get-docker.sh").await;
+
     if output.exit_code != 0 {
         return Err(AppError::Validation(format!(
-            "Failed to install Docker - {}",
+            "Failed to install Docker: {}",
             output.stdout
         )));
     }
