@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 
 const PENDING_JOB_KEY = 'deploydodo:pending_job_id'
 import type { JobCompletePayload, JobErrorPayload } from '@/api/types'
@@ -35,6 +36,7 @@ function stepperProps(view: View) {
 }
 
 export function SelectServer() {
+  const navigate = useNavigate()
   const [jobId, setJobId] = useState<string | null>(() => localStorage.getItem(PENDING_JOB_KEY))
   const [view, setView] = useState<View>(() =>
     localStorage.getItem(PENDING_JOB_KEY) ? 'connecting' : 'select',
@@ -100,11 +102,7 @@ export function SelectServer() {
       )}
 
       {view === 'setup-complete' && (
-        <SetupCompleteView
-          onGoToDashboard={() => {
-            /* TODO: navigate to dashboard */
-          }}
-        />
+        <SetupCompleteView onGoToDashboard={() => navigate({ to: '/dashboard' })} />
       )}
     </PageLayout>
   )
