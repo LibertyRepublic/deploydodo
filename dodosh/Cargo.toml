@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-russh = "0.58"
+russh = "0.60"
 tokio = { workspace = true }
 thiserror = { workspace = true }
