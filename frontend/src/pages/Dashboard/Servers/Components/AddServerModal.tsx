@@ -1,12 +1,23 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useFormik } from 'formik'
+import * as Yup from 'yup'
 import { useCreateLocalServer, useCreateRemoteServer } from '@/api/mutations'
 import { TextInput } from '@/components/TextInput'
 import { Button } from '@/components/Button'
 import { cn } from '@/utilities/cn'
 
-type ServerTypeOption = 'local' | 'remote'
-type AuthTypeOption = 'password' | 'keypair'
+type FormValues = {
+  serverType: 'local' | 'remote'
+  name: string
+  hostname: string
+  port: string
+  username: string
+  authMethod: 'password' | 'keypair'
+  password: string
+  privateKey: string
+  publicKey: string
+}
 
 type AddServerModalProps = {
   open: boolean
@@ -14,40 +25,104 @@ type AddServerModalProps = {
   onSuccess: () => void
 }
 
+const validationSchema = Yup.object({
+  name: Yup.string().trim().required('Server name is required'),
+  hostname: Yup.string().trim().required('Hostname is required'),
+  port: Yup.string().when('serverType', {
+    is: 'remote' as const,
+    then: (s) =>
+      s
+        .test('is-number', 'Port must be a number', (v) => v === '' || !isNaN(Number(v)))
+        .test('is-in-range', 'Port must be between 1 and 65535', (v) => {
+          if (v === '') return false
+          const n = Number(v)
+          return n >= 1 && n <= 65535
+        })
+        .required('Port is required'),
+    otherwise: (s) => s,
+  }),
+  username: Yup.string().when('serverType', {
+    is: 'remote' as const,
+    then: (s) => s.trim().required('Username is required'),
+    otherwise: (s) => s,
+  }),
+  privateKey: Yup.string().when(['authMethod', 'serverType'], {
+    is: (authMethod: string, serverType: string) =>
+      authMethod === 'keypair' && serverType === 'remote',
+    then: (s) => s.trim().required('Private key is required'),
+    otherwise: (s) => s,
+  }),
+  password: Yup.string().when(['authMethod', 'serverType'], {
+    is: (authMethod: string, serverType: string) =>
+      authMethod === 'password' && serverType === 'remote',
+    then: (s) => s.required('Password is required'),
+    otherwise: (s) => s,
+  }),
+  publicKey: Yup.string(),
+})
+
 export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps) {
-  const [serverType, setServerType] = useState<ServerTypeOption>('local')
-  const [name, setName] = useState('')
-  const [hostname, setHostname] = useState('')
-  const [port, setPort] = useState('22')
-  const [authType, setAuthType] = useState<AuthTypeOption>('password')
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [privateKey, setPrivateKey] = useState('')
-  const [publicKey, setPublicKey] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  const createLocal = useCreateLocalServer({
-    onSuccess: () => { onSuccess(); onClose() },
-    onError: (e) => setError(e.message),
-  })
-
-  const createRemote = useCreateRemoteServer({
-    onSuccess: () => { onSuccess(); onClose() },
-    onError: (e) => setError(e.message),
-  })
+  const createLocal = useCreateLocalServer()
+  const createRemote = useCreateRemoteServer()
 
   const isSubmitting = createLocal.isPending || createRemote.isPending
 
+  const formik = useFormik<FormValues>({
+    initialValues: {
+      serverType: 'local',
+      name: '',
+      hostname: '',
+      port: '22',
+      username: 'root',
+      authMethod: 'password',
+      password: '',
+      privateKey: '',
+      publicKey: '',
+    },
+    validationSchema,
+    validateOnMount: false,
+    onSubmit: (values) => {
+      setError(null)
+
+      if (values.serverType === 'local') {
+        createLocal.mutate(
+          { name: values.name.trim(), hostname: values.hostname.trim() },
+          {
+            onSuccess: () => { onSuccess(); onClose() },
+            onError: (e) => setError(e.message),
+          },
+        )
+      } else {
+        const auth =
+          values.authMethod === 'password'
+            ? ({ authType: 'password', username: values.username.trim(), password: values.password } as const)
+            : ({
+                authType: 'keypair',
+                username: values.username.trim(),
+                privateKey: values.privateKey.trim(),
+                publicKey: values.publicKey.trim() || null,
+              } as const)
+
+        createRemote.mutate(
+          {
+            name: values.name.trim(),
+            hostname: values.hostname.trim(),
+            port: Number(values.port),
+            auth,
+          },
+          {
+            onSuccess: () => { onSuccess(); onClose() },
+            onError: (e) => setError(e.message),
+          },
+        )
+      }
+    },
+  })
+
   function reset() {
-    setServerType('local')
-    setName('')
-    setHostname('')
-    setPort('22')
-    setAuthType('password')
-    setUsername('')
-    setPassword('')
-    setPrivateKey('')
-    setPublicKey('')
+    formik.resetForm()
     setError(null)
   }
 
@@ -57,54 +132,15 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
     onClose()
   }
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    setError(null)
-
-    if (!name.trim() || !hostname.trim()) {
-      setError('Name and hostname are required')
-      return
-    }
-
-    if (serverType === 'local') {
-      createLocal.mutate({ name: name.trim(), hostname: hostname.trim() })
-    } else {
-      if (!port || isNaN(Number(port))) {
-        setError('Valid port is required')
-        return
-      }
-      if (!username.trim()) {
-        setError('Username is required')
-        return
-      }
-      if (authType === 'password' && !password) {
-        setError('Password is required')
-        return
-      }
-      if (authType === 'keypair' && !privateKey.trim()) {
-        setError('Private key is required')
-        return
-      }
-
-      createRemote.mutate({
-        name: name.trim(),
-        hostname: hostname.trim(),
-        port: Number(port),
-        auth: authType === 'password'
-          ? { authType: 'password', username: username.trim(), password }
-          : { authType: 'keypair', username: username.trim(), privateKey: privateKey.trim(), publicKey: publicKey.trim() || null },
-      })
-    }
-  }
-
   if (!open) return null
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/30" onClick={handleClose} />
       <form
-        onSubmit={handleSubmit}
+        onSubmit={formik.handleSubmit}
         className="relative bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col overflow-hidden"
+        noValidate
       >
         {/* Header */}
         <div className="px-6 py-5 border-b border-neutral-100 flex justify-between items-start shrink-0">
@@ -134,24 +170,24 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
             <div className="flex rounded-lg border border-neutral-100 overflow-hidden">
               <button
                 type="button"
-                onClick={() => setServerType('local')}
+                onClick={() => formik.setFieldValue('serverType', 'local')}
                 className={cn(
                   'flex-1 py-2 font-manrope text-sm leading-6 transition-colors',
-                  serverType === 'local'
+                  formik.values.serverType === 'local'
                     ? 'bg-secondary text-pure-white font-bold'
-                    : 'bg-background text-text-secondary font-normal hover:text-high-contrast'
+                    : 'bg-background text-text-secondary font-normal hover:text-high-contrast',
                 )}
               >
                 Local
               </button>
               <button
                 type="button"
-                onClick={() => setServerType('remote')}
+                onClick={() => formik.setFieldValue('serverType', 'remote')}
                 className={cn(
                   'flex-1 py-2 font-manrope text-sm leading-6 transition-colors',
-                  serverType === 'remote'
+                  formik.values.serverType === 'remote'
                     ? 'bg-secondary text-pure-white font-bold'
-                    : 'bg-background text-text-secondary font-normal hover:text-high-contrast'
+                    : 'bg-background text-text-secondary font-normal hover:text-high-contrast',
                 )}
               >
                 Remote
@@ -160,13 +196,43 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
           </div>
 
           {/* Common fields */}
-          <TextInput label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="My Server" required />
-          <TextInput label="Hostname" value={hostname} onChange={(e) => setHostname(e.target.value)} placeholder="192.168.1.100" required />
+          <TextInput
+            label="Name"
+            name="name"
+            value={formik.values.name}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+            placeholder="My Server"
+            required
+            hasError={formik.touched.name && !!formik.errors.name}
+            errorMessage={formik.touched.name && formik.errors.name ? formik.errors.name : undefined}
+          />
+          <TextInput
+            label="Hostname"
+            name="hostname"
+            value={formik.values.hostname}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+            placeholder="192.168.1.100"
+            required
+            hasError={formik.touched.hostname && !!formik.errors.hostname}
+            errorMessage={formik.touched.hostname && formik.errors.hostname ? formik.errors.hostname : undefined}
+          />
 
           {/* Remote-only fields */}
-          {serverType === 'remote' && (
+          {formik.values.serverType === 'remote' && (
             <>
-              <TextInput label="Port" type="number" value={port} onChange={(e) => setPort(e.target.value)} placeholder="22" />
+              <TextInput
+                label="Port"
+                name="port"
+                type="number"
+                value={formik.values.port}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                placeholder="22"
+                hasError={formik.touched.port && !!formik.errors.port}
+                errorMessage={formik.touched.port && formik.errors.port ? formik.errors.port : undefined}
+              />
 
               {/* Auth type */}
               <div className="flex flex-col gap-2">
@@ -174,24 +240,24 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
                 <div className="flex rounded-lg border border-neutral-100 overflow-hidden">
                   <button
                     type="button"
-                    onClick={() => setAuthType('password')}
+                    onClick={() => formik.setFieldValue('authMethod', 'password')}
                     className={cn(
                       'flex-1 py-2 font-manrope text-sm leading-6 transition-colors',
-                      authType === 'password'
+                      formik.values.authMethod === 'password'
                         ? 'bg-secondary text-pure-white font-bold'
-                        : 'bg-background text-text-secondary font-normal hover:text-high-contrast'
+                        : 'bg-background text-text-secondary font-normal hover:text-high-contrast',
                     )}
                   >
                     Password
                   </button>
                   <button
                     type="button"
-                    onClick={() => setAuthType('keypair')}
+                    onClick={() => formik.setFieldValue('authMethod', 'keypair')}
                     className={cn(
                       'flex-1 py-2 font-manrope text-sm leading-6 transition-colors',
-                      authType === 'keypair'
+                      formik.values.authMethod === 'keypair'
                         ? 'bg-secondary text-pure-white font-bold'
-                        : 'bg-background text-text-secondary font-normal hover:text-high-contrast'
+                        : 'bg-background text-text-secondary font-normal hover:text-high-contrast',
                     )}
                   >
                     Key Pair
@@ -199,25 +265,60 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
                 </div>
               </div>
 
-              <TextInput label="Username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="root" required />
+              <TextInput
+                label="Username"
+                name="username"
+                value={formik.values.username}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                placeholder="root"
+                required
+                hasError={formik.touched.username && !!formik.errors.username}
+                errorMessage={formik.touched.username && formik.errors.username ? formik.errors.username : undefined}
+              />
 
-              {authType === 'password' ? (
-                <TextInput label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              {formik.values.authMethod === 'password' ? (
+                <TextInput
+                  label="Password"
+                  name="password"
+                  type="password"
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  required
+                  hasError={formik.touched.password && !!formik.errors.password}
+                  errorMessage={formik.touched.password && formik.errors.password ? formik.errors.password : undefined}
+                />
               ) : (
                 <>
                   <div className="flex flex-col gap-2">
                     <label className="font-sans font-normal text-base leading-6 text-secondary" htmlFor="private-key">Private Key</label>
                     <textarea
                       id="private-key"
-                      value={privateKey}
-                      onChange={(e) => setPrivateKey(e.target.value)}
+                      name="privateKey"
+                      value={formik.values.privateKey}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
                       placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
-                      className="w-full bg-background border border-neutral-100 rounded-lg px-3 py-2 font-mono font-normal text-xs leading-5 text-secondary outline-none resize-none focus:border-secondary transition-[border-color] duration-150"
+                      className={cn(
+                        'w-full bg-background border border-neutral-100 rounded-lg px-3 py-2 font-mono font-normal text-xs leading-5 text-secondary outline-none resize-none focus:border-secondary transition-[border-color] duration-150',
+                        formik.touched.privateKey && formik.errors.privateKey ? 'border-error!' : '',
+                      )}
                       rows={6}
-                      required
                     />
+                    {formik.touched.privateKey && formik.errors.privateKey && (
+                      <p className="font-sans font-normal text-sm leading-6 text-error m-0">
+                        {formik.errors.privateKey}
+                      </p>
+                    )}
                   </div>
-                  <TextInput label="Public Key (optional)" value={publicKey} onChange={(e) => setPublicKey(e.target.value)} />
+                  <TextInput
+                    label="Public Key (optional)"
+                    name="publicKey"
+                    value={formik.values.publicKey}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                  />
                 </>
               )}
             </>
@@ -234,11 +335,11 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Creating...' : `Create ${serverType === 'local' ? 'Local' : 'Remote'} Server`}
+            {isSubmitting ? 'Creating...' : `Create ${formik.values.serverType === 'local' ? 'Local' : 'Remote'} Server`}
           </Button>
         </div>
       </form>
     </div>,
-    document.body
+    document.body,
   )
 }
