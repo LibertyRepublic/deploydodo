@@ -5,5 +5,4 @@ edition = "2021"
 
 [dependencies]
 russh = "0.60"
-tokio = { workspace = true }
 thiserror = { workspace = true }
