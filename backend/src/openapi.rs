@@ -1,8 +1,8 @@
 use utoipa::OpenApi;
 
 use crate::routes::{
-    create_admin, create_local_server, create_remote_server, health, job_events, status,
-    validate_session,
+    create_admin, create_local_server, create_remote_server, health, job_events, list_servers,
+    status, validate_session,
 };
 use crate::services::types;
 
@@ -21,6 +21,7 @@ use crate::services::types;
         create_local_server::create_local_server,
         create_remote_server::create_remote_server,
         job_events::job_events,
+        list_servers::list_servers,
     ),
     components(schemas(
         health::HealthResponse,
@@ -33,6 +34,7 @@ use crate::services::types;
         create_remote_server::CreateRemoteServerRequest,
         create_remote_server::SshAuthRequest,
         create_remote_server::StartJobResponse,
+        list_servers::ServerResponse,
         types::AccountType,
         types::AuthType,
         types::ServerType,
@@ -43,6 +45,7 @@ use crate::services::types;
         (name = "status", description = "Config status"),
         (name = "auth", description = "Authentication"),
         (name = "setup", description = "Initial setup"),
+        (name = "servers", description = "Server management"),
         (name = "jobs", description = "Background jobs"),
     )
 )]

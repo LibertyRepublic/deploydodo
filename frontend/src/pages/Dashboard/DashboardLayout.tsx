@@ -1,9 +1,9 @@
+import { Outlet, useNavigate, useRouter, useLocation } from '@tanstack/react-router'
 import { Logo } from '@/components/Logo'
 import {
   SearchIcon,
   BellIcon,
   HelpIcon,
-  PlusIcon,
   NavDashboardIcon,
   NavProjectsIcon,
   NavServersIcon,
@@ -16,39 +16,49 @@ import {
   NavLogoutIcon,
 } from '@/assets/icons'
 import type { ComponentType, SVGProps } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { cn } from '@/utilities/cn'
 
 type NavItemDef = {
   Icon: ComponentType<SVGProps<SVGSVGElement>>
   label: string
-  active?: boolean
+  to: string
 }
 
 const mainNavItems: NavItemDef[] = [
-  { Icon: NavDashboardIcon, label: 'Dashboard', active: true },
-  { Icon: NavProjectsIcon, label: 'Projects' },
-  { Icon: NavServersIcon, label: 'Servers' },
-  { Icon: NavSourcesIcon, label: 'Sources' },
-  { Icon: NavDestinationsIcon, label: 'Destinations' },
-  { Icon: NavSharedVariablesIcon, label: 'Shared Variables' },
-  { Icon: NavKeysIcon, label: 'Keys & Tokens' },
-  { Icon: NavTerminalIcon, label: 'Terminal' },
-  { Icon: NavSettingsIcon, label: 'Settings' },
+  { Icon: NavDashboardIcon, label: 'Dashboard', to: '/dashboard' },
+  { Icon: NavProjectsIcon, label: 'Projects', to: '/dashboard/projects' },
+  { Icon: NavServersIcon, label: 'Servers', to: '/dashboard/servers' },
+  { Icon: NavSourcesIcon, label: 'Sources', to: '/dashboard/sources' },
+  { Icon: NavDestinationsIcon, label: 'Destinations', to: '/dashboard/destinations' },
+  { Icon: NavSharedVariablesIcon, label: 'Shared Variables', to: '/dashboard/shared-variables' },
+  { Icon: NavKeysIcon, label: 'Keys & Tokens', to: '/dashboard/keys' },
+  { Icon: NavTerminalIcon, label: 'Terminal', to: '/dashboard/terminal' },
+  { Icon: NavSettingsIcon, label: 'Settings', to: '/dashboard/settings' },
 ]
 
-function NavItem({ Icon, label, active = false }: NavItemDef) {
+function NavItem({ Icon, label, to }: NavItemDef) {
+  const navigate = useNavigate()
+  const router = useRouter()
+  const pathname = router.state.location.pathname
+  const isActive =
+    to === '/dashboard'
+      ? pathname === to
+      : pathname === to || pathname.startsWith(to + '/')
+
   return (
     <button
+      onClick={() => navigate({ to })}
       className={cn([
         'flex items-center gap-2 w-full pl-3 pr-2 py-2 rounded-lg text-left transition-colors duration-150',
-        active ? 'bg-neutral-200' : 'hover:bg-neutral-200',
+        isActive ? 'bg-neutral-200' : 'hover:bg-neutral-200',
       ])}
     >
       <Icon className="size-4 shrink-0" />
       <span
         className={cn([
           'font-manrope text-sm leading-6',
-          active ? 'font-bold text-secondary' : 'font-normal text-high-contrast',
+          isActive ? 'font-bold text-secondary' : 'font-normal text-high-contrast',
         ])}
       >
         {label}
@@ -57,19 +67,30 @@ function NavItem({ Icon, label, active = false }: NavItemDef) {
   )
 }
 
-export function Dashboard() {
+export function DashboardLayout() {
+  const location = useLocation()
+  const [ready, setReady] = useState(false)
+  const isFirstRender = useRef(true)
+
+  useLayoutEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      setReady(true)
+      return
+    }
+    setReady(false)
+    const id = requestAnimationFrame(() => setReady(true))
+    return () => cancelAnimationFrame(id)
+  }, [location.pathname])
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Top bar */}
+    <div className="h-screen bg-background flex flex-col">
       <header className="h-16 flex items-center shrink-0">
-        {/* Logo */}
         <div className="w-60 h-full flex items-center px-6 border-r border-b border-neutral-100 shrink-0">
           <Logo />
         </div>
 
-        {/* Search + actions */}
         <div className="flex-1 flex items-center justify-between pl-3 pr-6 border-b border-neutral-100 h-full">
-          {/* Search */}
           <div className="w-80 flex items-center gap-2 px-2 py-2 border border-neutral-100 rounded-lg">
             <SearchIcon className="size-6 shrink-0" />
             <span className="flex-1 font-manrope font-normal text-sm leading-6 text-text-secondary">
@@ -80,7 +101,6 @@ export function Dashboard() {
             </span>
           </div>
 
-          {/* Actions */}
           <div className="flex items-center gap-4">
             <button className="size-9 flex items-center justify-center rounded-lg hover:bg-neutral-200 transition-colors">
               <BellIcon className="size-6" />
@@ -95,38 +115,30 @@ export function Dashboard() {
         </div>
       </header>
 
-      {/* Body */}
-      <div className="flex flex-1">
-        {/* Sidebar */}
+      <div className="flex flex-1 overflow-hidden">
         <nav className="w-60 border-r border-neutral-100 flex flex-col justify-between pt-6 px-6 pb-2 shrink-0">
           <div className="flex flex-col gap-2">
             {mainNavItems.map((item) => (
-              <NavItem key={item.label} {...item} />
+              <NavItem key={item.to} {...item} />
             ))}
           </div>
           <div className="flex flex-col gap-2">
             <div className="border-t border-neutral-100" />
-            <NavItem Icon={NavLogoutIcon} label="Logout" />
+            <button className="flex items-center gap-2 w-full pl-3 pr-2 py-2 rounded-lg text-left transition-colors duration-150 hover:bg-neutral-200">
+              <NavLogoutIcon className="size-4 shrink-0" />
+              <span className="font-manrope font-normal text-sm leading-6 text-high-contrast">
+                Logout
+              </span>
+            </button>
           </div>
         </nav>
 
-        {/* Content */}
-        <main className="flex-1 p-8">
-          <div className="flex items-end justify-between">
-            <div className="flex flex-col gap-2">
-              <h1 className="font-sans font-semibold text-[40px] leading-12 tracking-[-0.5px] text-high-contrast m-0">
-                Dashboard
-              </h1>
-              <p className="font-sans font-normal text-base leading-6 text-text-secondary m-0">
-                View your projects and resources at a glance
-              </p>
-            </div>
-            <button className="flex items-center gap-2 pl-2 pr-4 py-2 border border-text-secondary rounded-lg hover:bg-neutral-200 transition-colors">
-              <PlusIcon className="size-4 shrink-0" />
-              <span className="font-manrope font-bold text-sm leading-6 text-high-contrast">
-                New
-              </span>
-            </button>
+        <main className="flex-1 p-8 overflow-y-auto">
+          <div
+            key={location.pathname}
+            className={`transition-all duration-150 ease-out ${ready ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
+          >
+            <Outlet />
           </div>
         </main>
       </div>

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
+use sqlx::{Row, SqlitePool};
 use utoipa::ToSchema;
 
 use crate::error::AppError;
@@ -65,6 +65,28 @@ impl ServerService {
             ssh_port: None,
             ssh_key_id: None,
         })
+    }
+
+    pub async fn list_servers(&self) -> Result<Vec<Server>, AppError> {
+        let rows = sqlx::query(
+            "SELECT id, name, server_type, hostname, ssh_port, ssh_key_id FROM servers ORDER BY id",
+        )
+        .fetch_all(&*self.db)
+        .await
+        .map_err(AppError::Database)?;
+
+        let mut servers = Vec::with_capacity(rows.len());
+        for row in rows {
+            servers.push(Server {
+                id: row.try_get("id").map_err(AppError::Database)?,
+                name: row.try_get("name").map_err(AppError::Database)?,
+                server_type: row.try_get("server_type").map_err(AppError::Database)?,
+                hostname: row.try_get("hostname").map_err(AppError::Database)?,
+                ssh_port: row.try_get("ssh_port").map_err(AppError::Database)?,
+                ssh_key_id: row.try_get("ssh_key_id").map_err(AppError::Database)?,
+            });
+        }
+        Ok(servers)
     }
 
     pub async fn create_remote_server(

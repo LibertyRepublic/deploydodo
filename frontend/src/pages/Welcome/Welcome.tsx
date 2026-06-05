@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { welcomeRoute } from '@/pages/Welcome/route'
 import { LogoIcon, PendingSpinnerIcon } from '@/assets/icons'
@@ -19,6 +20,14 @@ function LayeredCheckCircleIcon() {
   )
 }
 
+type ItemTitle = 'Admin Account' | 'Server Setup' | 'First Project'
+
+const itemRoutes: Record<ItemTitle, string> = {
+  'Admin Account': '/setup/server',
+  'Server Setup': '/setup/server',
+  'First Project': '/dashboard',
+}
+
 export function Welcome() {
   const navigate = useNavigate()
   const status = welcomeRoute.useLoaderData()
@@ -26,20 +35,25 @@ export function Welcome() {
   const items = [
     {
       done: status.isAdminOnboarded,
-      title: 'Admin Account',
+      title: 'Admin Account' as const,
       description: 'Set up your account and secure your instance',
     },
     {
       done: status.isServerSetup,
-      title: 'Server Setup',
+      title: 'Server Setup' as const,
       description: 'Configure your server and connect to it',
     },
     {
       done: status.isProjectSetup,
-      title: 'First Project',
+      title: 'First Project' as const,
       description: 'Create a project to organize your applications',
     },
   ]
+
+  const [selectedItem, setSelectedItem] = useState<ItemTitle>(() => {
+    const firstIncomplete = items.find((item) => !item.done)
+    return firstIncomplete?.title ?? items[0].title
+  })
 
   return (
     <div className="w-full min-h-screen bg-linear-to-b from-[rgba(255,122,73,0.01)] to-[rgba(252,140,99,0.12)] flex items-center justify-center py-10 px-4">
@@ -60,8 +74,13 @@ export function Welcome() {
 
             <div className="flex flex-col gap-[25px]">
               {items.map((item) => (
-                <div key={item.title} className="flex items-start gap-[10px]">
-                  {item.done ? (
+                <button
+                  key={item.title}
+                  type="button"
+                  onClick={() => setSelectedItem(item.title)}
+                  className="flex items-start gap-[10px] w-full text-left rounded-lg p-3 hover:bg-neutral-100 transition-colors duration-150"
+                >
+                  {selectedItem === item.title ? (
                     <div className="shrink-0 mt-0.5">
                       <LayeredCheckCircleIcon />
                     </div>
@@ -76,12 +95,12 @@ export function Welcome() {
                       {item.description}
                     </span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
 
             <div className="flex flex-col gap-2">
-              <Button fullWidth onClick={() => navigate({ to: '/setup/server' })}>
+              <Button fullWidth onClick={() => navigate({ to: itemRoutes[selectedItem] })}>
                 Continue setup
               </Button>
               <Button fullWidth variant="ghost" onClick={() => navigate({ to: '/dashboard' })}>
