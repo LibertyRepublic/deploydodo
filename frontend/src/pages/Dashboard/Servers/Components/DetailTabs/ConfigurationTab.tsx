@@ -40,7 +40,7 @@ export function ConfigurationTab() {
     },
   ])
 
-  const [caCert, setCaCert] = useState(
+  const [caCert] = useState(
     '-----BEGIN CERTIFICATE-----\n' +
     'MIICZjCCAcagAwIBAgIIcno/XxLokqAwCgYIKoZIzj0EAwQwUjEFMBOGA1UEAwwW\n' +
     'Q29vbGlmeSBDQSBkZXJoAWzpY2FOZTEQMA4GA1UECgwhQ29vbGlmeTELMAkGA1UE\n' +
