@@ -14,6 +14,20 @@ export async function getStatus() {
   return data!
 }
 
+export function useServersQuery() {
+  return useQuery({
+    queryKey: ['servers'],
+    queryFn: getServers,
+    staleTime: 30_000,
+  })
+}
+
+export async function getServers() {
+  const { data, error } = await api.GET('/api/servers')
+  if (error) throw error
+  return data!
+}
+
 export async function validateSession(): Promise<boolean> {
   const token = localStorage.getItem('session_token')
   if (!token) return false

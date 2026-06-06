@@ -3,11 +3,26 @@ import { api } from './client'
 import type {
   CreateAdminRequest,
   CreateAdminResponse,
+  CreateLocalServerRequest,
+  CreateLocalServerResponse,
   CreateRemoteServerRequest,
   StartJobResponse,
 } from './types'
 
 type Result<T> = { data: T | undefined; error: unknown; response: Response }
+
+export function useCreateLocalServer(
+  options?: Omit<
+    UseMutationOptions<Result<CreateLocalServerResponse>, Error, CreateLocalServerRequest>,
+    'mutationFn'
+  >,
+) {
+  return useMutation({
+    ...options,
+    mutationFn: (body: CreateLocalServerRequest) =>
+      api.POST('/api/setup/server/local', { body }) as Promise<Result<CreateLocalServerResponse>>,
+  })
+}
 
 export function useCreateAdmin(
   options?: Omit<

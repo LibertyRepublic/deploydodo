@@ -43,6 +43,7 @@ async fn main() {
     let app = Router::new()
         .route("/api/health", get(routes::health::health))
         .route("/api/status", get(routes::status::status))
+        .route("/api/servers", get(routes::list_servers::list_servers))
         .route(
             "/api/auth/validate",
             get(routes::validate_session::validate_session),
