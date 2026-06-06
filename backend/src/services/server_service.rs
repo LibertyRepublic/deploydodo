@@ -75,7 +75,7 @@ impl ServerService {
         .await
         .map_err(AppError::Database)?;
 
-        let mut servers = Vec::with_capacity(rows.len());
+        let mut servers = vec![];
         for row in rows {
             servers.push(Server {
                 id: row.try_get("id").map_err(AppError::Database)?,
