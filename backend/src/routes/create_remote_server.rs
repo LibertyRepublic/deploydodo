@@ -1,13 +1,11 @@
-use std::time::Duration;
-
 use axum::{extract::State, http::StatusCode, Json};
-use dodosh::{SshAuth, SshSession};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use utoipa::ToSchema;
 
 use crate::dependencies::Dependencies;
 use crate::error::AppError;
+use crate::services::docker_setup;
 use crate::services::ssh_service::SshKey;
 use crate::services::types::JobType;
 
@@ -62,13 +60,17 @@ impl SshAuthRequest {
         }
     }
 
-    pub fn get_ssh_auth<'a>(&'a self) -> SshAuth<'a> {
+    pub fn password(&self) -> Option<&str> {
         match self {
-            Self::Password { password, .. } => SshAuth::Password(password),
-            Self::KeyPair { private_key, .. } => SshAuth::Key {
-                private_key,
-                passphrase: None,
-            },
+            Self::Password { password, .. } => Some(password),
+            _ => None,
+        }
+    }
+
+    pub fn private_key(&self) -> Option<&str> {
+        match self {
+            Self::KeyPair { private_key, .. } => Some(private_key),
+            _ => None,
         }
     }
 }
@@ -229,14 +231,16 @@ async fn handle_remote(
         )
         .await?;
 
-    let session = SshSession::connect(
-        hostname,
-        *port,
-        auth.get_username(),
-        auth.get_ssh_auth(),
-        Some(Duration::from_mins(5)),
-    )
-    .await?;
+    let session = deps
+        .ssh_connector
+        .connect(
+            hostname,
+            *port,
+            auth.get_username(),
+            auth.password(),
+            auth.private_key(),
+        )
+        .await?;
 
     deps.job_service
         .emit(
@@ -248,7 +252,7 @@ async fn handle_remote(
         )
         .await?;
 
-    let is_root = session.check_root_access().await.map_err(AppError::Ssh)?;
+    let is_root = session.check_root_access().await?;
     if !is_root {
         session.disconnect().await?;
         return Err(AppError::Validation("Root access required".to_string()));
@@ -264,7 +268,7 @@ async fn handle_remote(
         )
         .await?;
 
-    verify_docker_runtime(&session, true).await?;
+    docker_setup::verify_docker_runtime(&*session, true).await?;
 
     session.disconnect().await?;
 
@@ -318,62 +322,123 @@ async fn create_ssh_key(
     }
 }
 
-async fn verify_docker_runtime(
-    session: &SshSession,
-    retry_after_install: bool,
-) -> Result<(), AppError> {
-    let docker_status = session.check_docker().await.map_err(AppError::Ssh)?;
-    if docker_status.is_installed {
-        let is_docker_installed_via_snap = session
-            .is_docker_installed_via_snap()
-            .await
-            .map_err(AppError::Ssh)?;
-        if is_docker_installed_via_snap {
-            session.disconnect().await?;
-            return Err(AppError::Validation(
-                "Docker runtime is present but it was installed via snap.
-                Please remove the snap installation and use the system package manager instead."
-                    .to_string(),
-            ));
-        }
-        if !docker_status.is_running {
-            session.disconnect().await?;
-            return Err(AppError::Validation(
-                "Docker runtime is installed but not running".to_string(),
-            ));
-        }
-        Ok(())
-    } else {
-        install_docker(session).await?;
-        if retry_after_install {
-            Box::pin(verify_docker_runtime(session, false)).await?;
-        }
-        Ok(())
-    }
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-async fn install_docker(session: &SshSession) -> Result<(), AppError> {
-    let output = session
-        .run_command("curl -fsSL https://get.docker.com -o get-docker.sh")
-        .await?;
-
-    if output.exit_code != 0 {
-        return Err(AppError::Validation(format!(
-            "Failed to download Docker installation script: {}",
-            output.stdout
-        )));
+    fn password_auth() -> SshAuthRequest {
+        SshAuthRequest::Password {
+            username: "root".into(),
+            password: "secret".into(),
+        }
     }
 
-    let output = session.run_command("sh get-docker.sh").await?;
-
-    let _ = session.run_command("rm get-docker.sh").await;
-
-    if output.exit_code != 0 {
-        return Err(AppError::Validation(format!(
-            "Failed to install Docker: {}",
-            output.stdout
-        )));
+    fn keypair_auth() -> SshAuthRequest {
+        SshAuthRequest::KeyPair {
+            username: "root".into(),
+            private_key: "key-content".into(),
+            public_key: None,
+        }
     }
 
-    Ok(())
+    #[test]
+    fn ssh_auth_validate_rejects_empty_username_password() {
+        let auth = SshAuthRequest::Password {
+            username: "  ".into(),
+            password: "secret".into(),
+        };
+        assert!(auth.validate().is_err());
+    }
+
+    #[test]
+    fn ssh_auth_validate_rejects_empty_password() {
+        let auth = SshAuthRequest::Password {
+            username: "root".into(),
+            password: "".into(),
+        };
+        assert!(auth.validate().is_err());
+    }
+
+    #[test]
+    fn ssh_auth_validate_rejects_empty_username_keypair() {
+        let auth = SshAuthRequest::KeyPair {
+            username: "".into(),
+            private_key: "key".into(),
+            public_key: None,
+        };
+        assert!(auth.validate().is_err());
+    }
+
+    #[test]
+    fn ssh_auth_validate_rejects_empty_private_key() {
+        let auth = SshAuthRequest::KeyPair {
+            username: "root".into(),
+            private_key: "  ".into(),
+            public_key: None,
+        };
+        assert!(auth.validate().is_err());
+    }
+
+    #[test]
+    fn ssh_auth_validate_accepts_valid_password_auth() {
+        assert!(password_auth().validate().is_ok());
+    }
+
+    #[test]
+    fn ssh_auth_validate_accepts_valid_keypair_auth() {
+        assert!(keypair_auth().validate().is_ok());
+    }
+
+    #[test]
+    fn request_validate_rejects_empty_name() {
+        let req = CreateRemoteServerRequest {
+            name: "  ".into(),
+            hostname: "example.com".into(),
+            port: 22,
+            auth: password_auth(),
+        };
+        assert!(req.validate().is_err());
+    }
+
+    #[test]
+    fn request_validate_rejects_empty_hostname() {
+        let req = CreateRemoteServerRequest {
+            name: "server1".into(),
+            hostname: "".into(),
+            port: 22,
+            auth: password_auth(),
+        };
+        assert!(req.validate().is_err());
+    }
+
+    #[test]
+    fn request_validate_accepts_valid_input() {
+        let req = CreateRemoteServerRequest {
+            name: "server1".into(),
+            hostname: "example.com".into(),
+            port: 2222,
+            auth: keypair_auth(),
+        };
+        assert!(req.validate().is_ok());
+    }
+
+    #[test]
+    fn ssh_auth_password_helper_returns_password() {
+        assert_eq!(password_auth().password(), Some("secret"));
+    }
+
+    #[test]
+    fn ssh_auth_keypair_helper_returns_private_key() {
+        assert_eq!(keypair_auth().private_key(), Some("key-content"));
+    }
+
+    #[test]
+    fn ssh_auth_password_helper_returns_none_password_for_keypair() {
+        assert_eq!(keypair_auth().password(), None);
+    }
+
+    #[test]
+    fn ssh_auth_keypair_helper_returns_none_key_for_password() {
+        assert_eq!(password_auth().private_key(), None);
+    }
 }

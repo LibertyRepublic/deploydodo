@@ -104,3 +104,48 @@ pub async fn create_admin(
         }),
     ))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_rejects_empty_name() {
+        let req = CreateAdminRequest {
+            name: "  ".into(),
+            email: "a@b.com".into(),
+            password: "password123".into(),
+        };
+        assert!(req.validate().is_err());
+    }
+
+    #[test]
+    fn validate_rejects_empty_email() {
+        let req = CreateAdminRequest {
+            name: "Admin".into(),
+            email: "".into(),
+            password: "password123".into(),
+        };
+        assert!(req.validate().is_err());
+    }
+
+    #[test]
+    fn validate_rejects_short_password() {
+        let req = CreateAdminRequest {
+            name: "Admin".into(),
+            email: "a@b.com".into(),
+            password: "short".into(),
+        };
+        assert!(req.validate().is_err());
+    }
+
+    #[test]
+    fn validate_accepts_valid_input() {
+        let req = CreateAdminRequest {
+            name: "Admin".into(),
+            email: "admin@deploydodo.app".into(),
+            password: "password123".into(),
+        };
+        assert!(req.validate().is_ok());
+    }
+}

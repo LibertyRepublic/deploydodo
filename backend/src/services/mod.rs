@@ -1,3 +1,4 @@
+pub mod docker_setup;
 mod job_service;
 mod server_service;
 mod session_service;

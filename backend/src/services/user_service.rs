@@ -86,3 +86,123 @@ impl UserService {
             .map(|hash| hash.to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers::test_helpers::create_test_db;
+    use chrono::Utc;
+
+    fn test_user(email: &str, password: &str) -> User {
+        User {
+            id: None,
+            name: "Test User".into(),
+            email: email.into(),
+            password_hash: password.into(),
+            account_type: AccountType::Admin,
+            created_at: Utc::now(),
+        }
+    }
+
+    #[tokio::test]
+    async fn create_user_persists_and_hashes_password() {
+        let db = Arc::new(create_test_db().await);
+        let svc = UserService::new(db.clone());
+
+        let user = svc.create_user(test_user("a@b.com", "password123")).await.unwrap();
+
+        assert!(user.id.is_some());
+        assert_eq!(user.email, "a@b.com");
+        assert_ne!(user.password_hash, "password123");
+        user.verify_password("password123").expect("password should verify");
+    }
+
+    #[tokio::test]
+    async fn create_user_duplicate_email_fails() {
+        let db = Arc::new(create_test_db().await);
+        let svc = UserService::new(db.clone());
+
+        svc.create_user(test_user("dup@test.com", "password123")).await.unwrap();
+        let result = svc.create_user(test_user("dup@test.com", "otherpass")).await;
+
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn count_users_returns_zero_for_empty_db() {
+        let db = Arc::new(create_test_db().await);
+        let svc = UserService::new(db.clone());
+
+        assert_eq!(svc.count_users().await.unwrap(), 0);
+    }
+
+    #[tokio::test]
+    async fn count_users_increments_after_create() {
+        let db = Arc::new(create_test_db().await);
+        let svc = UserService::new(db.clone());
+
+        svc.create_user(test_user("u1@test.com", "pass1")).await.unwrap();
+        assert_eq!(svc.count_users().await.unwrap(), 1);
+
+        svc.create_user(test_user("u2@test.com", "pass2")).await.unwrap();
+        assert_eq!(svc.count_users().await.unwrap(), 2);
+    }
+
+    #[tokio::test]
+    async fn get_by_email_returns_user_when_exists() {
+        let db = Arc::new(create_test_db().await);
+        let svc = UserService::new(db.clone());
+
+        svc.create_user(test_user("findme@test.com", "secret123")).await.unwrap();
+
+        let found = svc.get_by_email("findme@test.com").await.unwrap();
+        assert!(found.is_some());
+        assert_eq!(found.unwrap().name, "Test User");
+    }
+
+    #[tokio::test]
+    async fn get_by_email_returns_none_for_unknown_email() {
+        let db = Arc::new(create_test_db().await);
+        let svc = UserService::new(db.clone());
+
+        let found = svc.get_by_email("nobody@test.com").await.unwrap();
+        assert!(found.is_none());
+    }
+
+    #[test]
+    fn hash_password_produces_valid_argon2_hash() {
+        let hash = UserService::hash_password("mypassword").unwrap();
+        assert!(hash.starts_with("$argon2"));
+    }
+
+    #[test]
+    fn verify_password_accepts_correct_password() {
+        let hash = UserService::hash_password("correct").unwrap();
+        let user = User {
+            id: Some(1),
+            name: "test".into(),
+            email: "t@t.com".into(),
+            password_hash: hash,
+            account_type: AccountType::Admin,
+            created_at: Utc::now(),
+        };
+
+        user.verify_password("correct").unwrap();
+    }
+
+    #[test]
+    fn verify_password_rejects_wrong_password() {
+        let hash = UserService::hash_password("correct").unwrap();
+        let user = User {
+            id: Some(1),
+            name: "test".into(),
+            email: "t@t.com".into(),
+            password_hash: hash,
+            account_type: AccountType::Admin,
+            created_at: Utc::now(),
+        };
+
+        let result = user.verify_password("wrongpassword");
+        assert!(result.is_err());
+    }
+}

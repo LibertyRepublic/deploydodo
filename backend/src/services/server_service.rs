@@ -75,7 +75,7 @@ impl ServerService {
         .fetch_optional(&*self.db)
         .await
         .map_err(AppError::Database)?
-        .ok_or(AppError::Validation("Server not found".into()))?;
+        .ok_or(AppError::NotFound("Server not found".into()))?;
 
         Ok(Server {
             id: row.try_get("id").map_err(AppError::Database)?,
@@ -138,5 +138,108 @@ impl ServerService {
             ssh_port: Some(ssh_port),
             ssh_key_id: Some(ssh_key_id),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers::test_helpers::create_test_db;
+
+    #[tokio::test]
+    async fn create_local_server_persists_and_returns_server() {
+        let db = Arc::new(create_test_db().await);
+        let svc = ServerService::new(db);
+
+        let server = svc.create_local_server("my-server", "localhost").await.unwrap();
+
+        assert!(server.id > 0);
+        assert_eq!(server.name, "my-server");
+        assert_eq!(server.hostname, "localhost");
+        assert_eq!(server.server_type, ServerType::Local);
+        assert!(server.ssh_port.is_none());
+        assert!(server.ssh_key_id.is_none());
+    }
+
+    #[tokio::test]
+    async fn count_local_servers_returns_zero_for_empty_db() {
+        let db = Arc::new(create_test_db().await);
+        let svc = ServerService::new(db);
+
+        assert_eq!(svc.count_local_servers().await.unwrap(), 0);
+    }
+
+    #[tokio::test]
+    async fn count_local_servers_returns_one_after_create() {
+        let db = Arc::new(create_test_db().await);
+        let svc = ServerService::new(db);
+
+        svc.create_local_server("s1", "h1").await.unwrap();
+        assert_eq!(svc.count_local_servers().await.unwrap(), 1);
+    }
+
+    #[tokio::test]
+    async fn get_server_by_id_returns_server_when_found() {
+        let db = Arc::new(create_test_db().await);
+        let svc = ServerService::new(db);
+
+        let created = svc.create_local_server("find-me", "host.local").await.unwrap();
+
+        let found = svc.get_server_by_id(created.id).await.unwrap();
+        assert_eq!(found.name, "find-me");
+        assert_eq!(found.hostname, "host.local");
+    }
+
+    #[tokio::test]
+    async fn get_server_by_id_returns_error_for_nonexistent_id() {
+        let db = Arc::new(create_test_db().await);
+        let svc = ServerService::new(db);
+
+        let result = svc.get_server_by_id(99999).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn list_servers_returns_empty_for_empty_db() {
+        let db = Arc::new(create_test_db().await);
+        let svc = ServerService::new(db);
+
+        assert!(svc.list_servers().await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn list_servers_returns_all_created_servers() {
+        let db = Arc::new(create_test_db().await);
+        let svc = ServerService::new(db);
+
+        svc.create_local_server("s1", "h1").await.unwrap();
+        svc.create_local_server("s2", "h2").await.unwrap();
+
+        let list = svc.list_servers().await.unwrap();
+        assert_eq!(list.len(), 2);
+        let names: Vec<&str> = list.iter().map(|s| s.name.as_str()).collect();
+        assert!(names.contains(&"s1"));
+        assert!(names.contains(&"s2"));
+    }
+
+    #[tokio::test]
+    async fn create_remote_server_persists_with_ssh_key_id() {
+        let db = Arc::new(create_test_db().await);
+        let svc = ServerService::new(db.clone());
+
+        sqlx::query("INSERT INTO ssh_keys (id, name, username, auth_type, created_at) VALUES (5, 'k', 'u', 'password', datetime('now'))")
+            .execute(&*db)
+            .await
+            .unwrap();
+
+        let server = svc
+            .create_remote_server("remote1", "example.com", 2222, 5)
+            .await
+            .unwrap();
+
+        assert!(server.id > 0);
+        assert_eq!(server.server_type, ServerType::Remote);
+        assert_eq!(server.ssh_port, Some(2222));
+        assert_eq!(server.ssh_key_id, Some(5));
     }
 }

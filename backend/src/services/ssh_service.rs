@@ -38,7 +38,73 @@ impl SshKey {
                 .private_key
                 .as_deref()
                 .ok_or(AppError::MissingKeySecret),
-        }
+    }
+}
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers::test_helpers::create_test_db;
+
+    #[tokio::test]
+    async fn create_password_auth_persists_and_returns_key() {
+        let db = Arc::new(create_test_db().await);
+        let svc = SshService::new(db);
+
+        let key = svc
+            .create_password_auth("my-key", "admin", "secret")
+            .await
+            .unwrap();
+
+        assert!(key.id > 0);
+        assert_eq!(key.name, "my-key");
+        assert_eq!(key.username, "admin");
+        assert_eq!(key.password, Some("secret".into()));
+        assert!(matches!(key.auth_type, AuthType::Password));
+        assert!(key.private_key.is_none());
+        assert!(key.public_key.is_none());
+    }
+
+    #[tokio::test]
+    async fn create_key_auth_persists_and_returns_key() {
+        let db = Arc::new(create_test_db().await);
+        let svc = SshService::new(db);
+
+        let key = svc
+            .create_key_auth("keypair1", "root", "private-content", Some("public-content"))
+            .await
+            .unwrap();
+
+        assert!(key.id > 0);
+        assert!(matches!(key.auth_type, AuthType::KeyPair));
+        assert_eq!(key.private_key, Some("private-content".into()));
+        assert_eq!(key.public_key, Some("public-content".into()));
+        assert!(key.password.is_none());
+    }
+
+    #[tokio::test]
+    async fn get_key_by_id_returns_key_when_found() {
+        let db = Arc::new(create_test_db().await);
+        let svc = SshService::new(db);
+
+        let created = svc
+            .create_password_auth("k1", "user1", "pass1")
+            .await
+            .unwrap();
+
+        let found = svc.get_key_by_id(created.id).await.unwrap();
+        assert_eq!(found.name, "k1");
+        assert_eq!(found.username, "user1");
+    }
+
+    #[tokio::test]
+    async fn get_key_by_id_returns_error_for_nonexistent_id() {
+        let db = Arc::new(create_test_db().await);
+        let svc = SshService::new(db);
+
+        let result = svc.get_key_by_id(99999).await;
+        assert!(result.is_err());
     }
 }
 
@@ -120,7 +186,7 @@ impl SshService {
         .await
         .map_err(AppError::Database)?;
 
-        let row = row.ok_or(AppError::Validation("SSH key not found".into()))?;
+        let row = row.ok_or(AppError::NotFound("SSH key not found".into()))?;
 
         Ok(SshKey {
             id: row.try_get("id").map_err(AppError::Database)?,

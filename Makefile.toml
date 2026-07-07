@@ -55,3 +55,29 @@ exit $EXIT_CODE
 description = "Run backend and frontend concurrently"
 dependencies = ["generate-schema"]
 run_task = { name = ["backend", "frontend"], parallel = true }
+
+[tasks.test-backend]
+description = "Run backend unit and integration tests"
+command = "cargo"
+args = ["test", "-p", "backend"]
+
+[tasks.test-frontend]
+description = "Run frontend tests"
+command = "npm"
+args = ["run", "test"]
+cwd = "frontend"
+
+[tasks.test]
+description = "Run all tests"
+dependencies = ["test-backend", "test-frontend"]
+
+[tasks.coverage-backend]
+description = "Run backend tests with coverage (requires cargo-llvm-cov)"
+command = "cargo"
+args = ["llvm-cov", "--lcov", "--output-path", "target/coverage.lcov", "-p", "backend"]
+
+[tasks.coverage-frontend]
+description = "Run frontend tests with coverage"
+command = "npm"
+args = ["run", "test:coverage"]
+cwd = "frontend"

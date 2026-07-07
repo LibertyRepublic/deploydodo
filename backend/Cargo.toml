@@ -29,4 +29,6 @@ futures-util = "0.3"
 tokio-stream = "0.1"
 bollard = { version = "0.21", features = ["chrono"] }
 bytes = "1"
+async-trait = "0.1"
+tower = "0.5"
 dodosh = { path = "../dodosh" }

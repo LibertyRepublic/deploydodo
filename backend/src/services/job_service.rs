@@ -158,3 +158,91 @@ impl JobService {
             .map_err(AppError::Database)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers::test_helpers::create_test_db;
+    use serde_json::json;
+
+    fn new_svc(db: Arc<SqlitePool>) -> JobService {
+        JobService::new(db)
+    }
+
+    #[tokio::test]
+    async fn create_job_returns_uuid_and_sets_pending_status() {
+        let db = Arc::new(create_test_db().await);
+        let svc = new_svc(db.clone());
+
+        let job_id = svc.create_job(JobType::CreateServer).await.unwrap();
+        assert!(!job_id.is_empty());
+
+        let status = svc.get_job_status(&job_id).await.unwrap();
+        assert_eq!(status, Some("pending".into()));
+    }
+
+    #[tokio::test]
+    async fn emit_persists_event_in_database() {
+        let db = Arc::new(create_test_db().await);
+        let svc = new_svc(db.clone());
+
+        let job_id = svc.create_job(JobType::CreateServer).await.unwrap();
+        svc.emit(&job_id, "progress", json!({"msg": "hello"})).await.unwrap();
+
+        let events = svc.get_events(&job_id).await.unwrap();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].event_type, "progress");
+        assert!(events[0].data.contains("hello"));
+    }
+
+    #[tokio::test]
+    async fn finish_job_updates_status() {
+        let db = Arc::new(create_test_db().await);
+        let svc = new_svc(db.clone());
+
+        let job_id = svc.create_job(JobType::CreateServer).await.unwrap();
+        svc.finish_job(&job_id, "completed").await.unwrap();
+
+        assert_eq!(svc.get_job_status(&job_id).await.unwrap(), Some("completed".into()));
+    }
+
+    #[tokio::test]
+    async fn get_job_status_returns_none_for_unknown_job() {
+        let db = Arc::new(create_test_db().await);
+        let svc = new_svc(db);
+
+        assert_eq!(svc.get_job_status("nonexistent-id").await.unwrap(), None);
+    }
+
+    #[tokio::test]
+    async fn subscribe_receives_broadcast_events() {
+        let db = Arc::new(create_test_db().await);
+        let svc = new_svc(db.clone());
+
+        let job_id = svc.create_job(JobType::CreateServer).await.unwrap();
+
+        let mut rx = svc.subscribe(&job_id).expect("subscriber should exist");
+
+        svc.emit(&job_id, "progress", json!({"step": 1})).await.unwrap();
+
+        let received = rx.recv().await.unwrap();
+        assert_eq!(received.event_type, "progress");
+        assert!(received.data.contains("step"));
+    }
+
+    #[tokio::test]
+    async fn finish_job_drops_sender_closing_subscribers() {
+        let db = Arc::new(create_test_db().await);
+        let svc = new_svc(db.clone());
+
+        let job_id = svc.create_job(JobType::CreateServer).await.unwrap();
+        let mut rx = svc.subscribe(&job_id).unwrap();
+
+        svc.finish_job(&job_id, "completed").await.unwrap();
+
+        match rx.recv().await {
+            Err(broadcast::error::RecvError::Closed) => {}
+            other => panic!("expected Closed, got {:?}", other.err()),
+        }
+    }
+}

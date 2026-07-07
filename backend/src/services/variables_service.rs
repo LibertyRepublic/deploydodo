@@ -37,3 +37,36 @@ impl VariablesService {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers::test_helpers::create_test_db;
+
+    #[tokio::test]
+    async fn get_returns_none_for_missing_key() {
+        let db = Arc::new(create_test_db().await);
+        let svc = VariablesService::new(db);
+
+        assert_eq!(svc.get("nonexistent").await.unwrap(), None);
+    }
+
+    #[tokio::test]
+    async fn set_and_get_roundtrip() {
+        let db = Arc::new(create_test_db().await);
+        let svc = VariablesService::new(db);
+
+        svc.set("my_key", "my_value").await.unwrap();
+        assert_eq!(svc.get("my_key").await.unwrap(), Some("my_value".into()));
+    }
+
+    #[tokio::test]
+    async fn set_overwrites_existing_value() {
+        let db = Arc::new(create_test_db().await);
+        let svc = VariablesService::new(db);
+
+        svc.set("key", "value1").await.unwrap();
+        svc.set("key", "value2").await.unwrap();
+        assert_eq!(svc.get("key").await.unwrap(), Some("value2".into()));
+    }
+}

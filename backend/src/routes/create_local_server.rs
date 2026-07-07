@@ -76,3 +76,35 @@ pub async fn create_local_server(
         }),
     ))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_rejects_empty_name() {
+        let req = CreateLocalServerRequest {
+            name: "  ".into(),
+            hostname: "localhost".into(),
+        };
+        assert!(req.validate().is_err());
+    }
+
+    #[test]
+    fn validate_rejects_empty_hostname() {
+        let req = CreateLocalServerRequest {
+            name: "my-server".into(),
+            hostname: "".into(),
+        };
+        assert!(req.validate().is_err());
+    }
+
+    #[test]
+    fn validate_accepts_valid_input() {
+        let req = CreateLocalServerRequest {
+            name: "my-server".into(),
+            hostname: "localhost".into(),
+        };
+        assert!(req.validate().is_ok());
+    }
+}

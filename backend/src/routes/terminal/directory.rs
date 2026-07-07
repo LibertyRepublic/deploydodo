@@ -58,3 +58,80 @@ fn resolve_cd_target(current_dir: &str, cmd_trimmed: &str) -> CdAction {
 
     CdAction::Change { new_dir }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resolve_cd_bare_cd_goes_to_root() {
+        match resolve_cd("/some/dir", "cd") {
+            CdAction::Change { new_dir } => assert_eq!(new_dir, "/root"),
+            CdAction::NoOp => panic!("expected Change"),
+        }
+    }
+
+    #[test]
+    fn resolve_cd_tilde_goes_to_root() {
+        match resolve_cd("/some/dir", "cd ~") {
+            CdAction::Change { new_dir } => assert_eq!(new_dir, "/root"),
+            CdAction::NoOp => panic!("expected Change"),
+        }
+    }
+
+    #[test]
+    fn resolve_cd_slash_goes_to_root() {
+        match resolve_cd("/some/dir", "cd /") {
+            CdAction::Change { new_dir } => assert_eq!(new_dir, "/"),
+            CdAction::NoOp => panic!("expected Change"),
+        }
+    }
+
+    #[test]
+    fn resolve_cd_dotdot_goes_to_parent() {
+        match resolve_cd("/foo/bar/baz", "cd ..") {
+            CdAction::Change { new_dir } => assert_eq!(new_dir, "/foo/bar"),
+            CdAction::NoOp => panic!("expected Change"),
+        }
+    }
+
+    #[test]
+    fn resolve_cd_dotdot_from_root_stays_root() {
+        match resolve_cd("/", "cd ..") {
+            CdAction::Change { new_dir } => assert_eq!(new_dir, "/"),
+            CdAction::NoOp => panic!("expected Change"),
+        }
+    }
+
+    #[test]
+    fn resolve_cd_relative_subdir() {
+        match resolve_cd("/app", "cd src") {
+            CdAction::Change { new_dir } => assert_eq!(new_dir, "/app/src"),
+            CdAction::NoOp => panic!("expected Change"),
+        }
+    }
+
+    #[test]
+    fn resolve_cd_absolute_path() {
+        match resolve_cd("/app", "cd /etc/nginx") {
+            CdAction::Change { new_dir } => assert_eq!(new_dir, "/etc/nginx"),
+            CdAction::NoOp => panic!("expected Change"),
+        }
+    }
+
+    #[test]
+    fn resolve_noop_for_non_cd_command() {
+        match resolve_cd("/app", "ls -la") {
+            CdAction::NoOp => {}
+            CdAction::Change { .. } => panic!("expected NoOp"),
+        }
+    }
+
+    #[test]
+    fn resolve_cd_quoted_path() {
+        match resolve_cd("/tmp", "cd \"my data\"") {
+            CdAction::Change { new_dir } => assert_eq!(new_dir, "/tmp/my data"),
+            CdAction::NoOp => panic!("expected Change"),
+        }
+    }
+}
