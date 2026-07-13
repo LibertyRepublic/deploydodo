@@ -32,14 +32,13 @@ pub struct SshTimeout {
 }
 
 #[derive(Default)]
-struct SshTimeoutBuilder {
+pub struct SshTimeoutBuilder {
     inactivity_secs: Option<u64>,
     keepalive_secs: Option<u64>,
     keepalive_max: Option<usize>,
 }
 
 impl SshTimeout {
-    #[allow(private_interfaces)]
     pub fn builder() -> SshTimeoutBuilder {
         SshTimeoutBuilder::default()
     }
@@ -58,12 +57,12 @@ impl SshTimeout {
 }
 
 impl SshTimeoutBuilder {
-    pub fn inactivity_secs(&mut self, secs: u64) -> &Self {
+    pub fn inactivity_secs(&mut self, secs: u64) -> &mut Self {
         self.inactivity_secs = Some(secs);
         self
     }
 
-    pub fn keepalive_secs(&mut self, secs: u64) -> &Self {
+    pub fn keepalive_secs(&mut self, secs: u64) -> &mut Self {
         self.keepalive_secs = Some(secs);
         self
     }

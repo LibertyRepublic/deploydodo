@@ -13,13 +13,37 @@ pub async fn terminal_init(
 
     let ssh_key = deps.ssh_service.get_key_for_server(&server).await?;
 
-    Ok(terminal::connect_host(
-        server.hostname().as_ref(),
-        server.ssh_port(),
-        ssh_key.username(),
-        (&ssh_key).into(),
-        params.into(),
-        SshTimeout::keepalive_secs(30),
-    )
-    .await?)
+    let timeout_config = SshTimeout::builder()
+        .inactivity_secs(60)
+        .keepalive_secs(30)
+        .build();
+
+    if let Some(ref container_name) = params.container_name.clone() {
+        let server_type = server.server_type();
+
+        if server_type.is_local() {
+            Ok(terminal::connect_docker_local(container_name, params.into()).await?)
+        } else {
+            Ok(terminal::connect_docker_remote(
+                server.hostname().as_ref(),
+                server.ssh_port(),
+                ssh_key.username(),
+                (&ssh_key).into(),
+                container_name,
+                params.into(),
+                timeout_config,
+            )
+            .await?)
+        }
+    } else {
+        Ok(terminal::connect_host(
+            server.hostname().as_ref(),
+            server.ssh_port(),
+            ssh_key.username(),
+            (&ssh_key).into(),
+            params.into(),
+            SshTimeout::keepalive_secs(30),
+        )
+        .await?)
+    }
 }

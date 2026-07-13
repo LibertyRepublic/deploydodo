@@ -41,7 +41,7 @@ export function useTerminalSocket(
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
     const url =
       `${proto}://${window.location.host}/api/servers/${serverId}/terminal` +
-      `?cols=${term.cols}&rows=${term.rows}&token=${encodeURIComponent(token)}`
+      `?cols=${term.cols}&rows=${term.rows}&container_name=9702a4653551&token=${encodeURIComponent(token)}`
 
     onStatusRef.current?.('connecting')
     const ws = new WebSocket(url)
