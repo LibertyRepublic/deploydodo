@@ -64,6 +64,14 @@ pub async fn create_local_server(
 
     tracing::info!(id = %server.id(), "local server created");
 
+    deps.variables_service
+        .set_value("is_local_server_setup", true)
+        .await?;
+
+    deps.variables_service
+        .set_value("is_server_setup", true)
+        .await?;
+
     Ok((
         StatusCode::CREATED,
         Json(CreateLocalServerResponse {
