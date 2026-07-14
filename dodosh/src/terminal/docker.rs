@@ -1,4 +1,4 @@
-use std::pin::Pin;
+use std::{pin::Pin, time::Duration};
 
 use bollard::{
     container::LogOutput,
@@ -6,7 +6,7 @@ use bollard::{
     Docker,
 };
 use futures::Stream;
-use tokio::{io::AsyncWrite, sync::Mutex};
+use tokio::{io::AsyncWrite, sync::Mutex, time};
 
 use crate::{
     terminal::{TermSize, Terminal},
@@ -31,6 +31,11 @@ impl DockerChannel {
         let output_mut = &mut self.output.lock().await;
         match futures_util::StreamExt::next(&mut output_mut.as_mut()).await {
             Some(Ok(log)) => Some(log.into_bytes().to_vec()),
+            Some(Err(err)) => Some(
+                format!("\r\n[session error: {err}]\r\n")
+                    .into_bytes()
+                    .to_vec(),
+            ),
             _ => None,
         }
     }
@@ -52,12 +57,19 @@ impl DockerChannel {
 pub async fn connect_docker_local(
     container_name: &str,
     size: TermSize,
+    timeout_config: SshTimeout,
 ) -> Result<Terminal, ShellError> {
     let docker = Docker::connect_with_local_defaults()?;
 
-    connect_docker(docker, container_name, size)
-        .await
-        .map(Terminal::Docker)
+    connect_docker(
+        docker,
+        container_name,
+        size,
+        timeout_config.connect_timeout_secs,
+        None,
+    )
+    .await
+    .map(Terminal::Docker)
 }
 
 pub async fn connect_docker_remote(
@@ -69,15 +81,22 @@ pub async fn connect_docker_remote(
     size: TermSize,
     timeout_config: SshTimeout,
 ) -> Result<Terminal, ShellError> {
-    let session = SshSession::connect(hostname, port, username, auth, timeout_config).await?;
+    let session =
+        SshSession::connect(hostname, port, username, auth, timeout_config.clone()).await?;
 
     let tunnel = session.forward_docker_socket().await?;
 
     let docker_proxy = format!("127.0.0.1:{}", tunnel.local_port);
     let docker = Docker::connect_with_http(&docker_proxy, 120, bollard::API_DEFAULT_VERSION)?;
 
-    let mut channel = connect_docker(docker, container_name, size).await?;
-    channel._tunnel = Some(tunnel);
+    let channel = connect_docker(
+        docker,
+        container_name,
+        size,
+        timeout_config.connect_timeout_secs,
+        Some(tunnel),
+    )
+    .await?;
 
     Ok(Terminal::Docker(channel))
 }
@@ -86,20 +105,27 @@ async fn connect_docker(
     docker: Docker,
     container_name: &str,
     size: TermSize,
+    connect_timeout: u64,
+    tunnel: Option<DockerTunnel>,
 ) -> Result<DockerChannel, ShellError> {
-    let exec = docker
-        .create_exec(container_name, get_exec_options())
-        .await?;
+    let request_timeout = Duration::from_secs(connect_timeout);
+    let exec = time::timeout(
+        request_timeout,
+        docker.create_exec(container_name, get_exec_options()),
+    )
+    .await??;
 
-    let StartExecResults::Attached { output, input } = docker
-        .start_exec(
+    let StartExecResults::Attached { output, input } = time::timeout(
+        request_timeout,
+        docker.start_exec(
             &exec.id,
             Some(StartExecOptions {
                 tty: true,
                 ..Default::default()
             }),
-        )
-        .await?
+        ),
+    )
+    .await??
     else {
         return Err(ShellError::AuthFailed);
     };
@@ -119,7 +145,7 @@ async fn connect_docker(
         exec_id: exec.id,
         input: Mutex::new(input),
         output: Mutex::new(output),
-        _tunnel: None,
+        _tunnel: tunnel,
     })
 }
 
@@ -130,7 +156,6 @@ fn get_exec_options() -> CreateExecOptions<String> {
         attach_stderr: Some(true),
         tty: Some(true),
         cmd: Some(vec!["/bin/sh".to_string()]),
-        detach_keys: Some("ctrl-c".to_string()),
         ..Default::default()
     }
 }

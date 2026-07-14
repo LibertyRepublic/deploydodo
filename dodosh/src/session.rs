@@ -25,9 +25,11 @@ pub struct SshSession {
     handle: Arc<client::Handle<Handler>>,
 }
 
+#[derive(Clone)]
 pub struct SshTimeout {
     inactivity_secs: Option<u64>,
     keepalive_secs: Option<u64>,
+    pub(crate) connect_timeout_secs: u64,
     keepalive_max: usize,
 }
 
@@ -35,20 +37,13 @@ pub struct SshTimeout {
 pub struct SshTimeoutBuilder {
     inactivity_secs: Option<u64>,
     keepalive_secs: Option<u64>,
+    connect_timeout_secs: Option<u64>,
     keepalive_max: Option<usize>,
 }
 
 impl SshTimeout {
     pub fn builder() -> SshTimeoutBuilder {
         SshTimeoutBuilder::default()
-    }
-
-    pub fn none() -> Self {
-        Self::builder().build()
-    }
-
-    pub fn keepalive_secs(secs: u64) -> Self {
-        Self::builder().keepalive_secs(secs).build()
     }
 
     pub fn inactivity_secs(secs: u64) -> Self {
@@ -67,10 +62,16 @@ impl SshTimeoutBuilder {
         self
     }
 
+    pub fn connect_timeout_secs(&mut self, secs: u64) -> &mut Self {
+        self.connect_timeout_secs = Some(secs);
+        self
+    }
+
     pub fn build(&self) -> SshTimeout {
         SshTimeout {
             inactivity_secs: self.inactivity_secs,
             keepalive_secs: self.keepalive_secs,
+            connect_timeout_secs: self.connect_timeout_secs.unwrap_or(10),
             keepalive_max: self.keepalive_max.unwrap_or(5),
         }
     }

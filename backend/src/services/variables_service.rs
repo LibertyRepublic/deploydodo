@@ -94,7 +94,7 @@ impl Serializer for VariableKeySerializer {
     fn serialize_str(self, _v: &str) -> Result<Self::Ok, Self::Error> {
         Err(Self::Error::custom("cannot serialize str"))
     }
-    fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Self::Error> {
+    fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
         Err(Self::Error::custom("cannot serialize unit struct"))
     }
     fn serialize_unit_variant(

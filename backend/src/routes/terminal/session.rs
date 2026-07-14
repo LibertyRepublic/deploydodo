@@ -22,7 +22,10 @@ pub async fn terminal_init(
         let server_type = server.server_type();
 
         if server_type.is_local() {
-            Ok(terminal::connect_docker_local(container_name, params.into()).await?)
+            Ok(
+                terminal::connect_docker_local(container_name, params.into(), timeout_config)
+                    .await?,
+            )
         } else {
             Ok(terminal::connect_docker_remote(
                 server.hostname().as_ref(),
@@ -42,7 +45,7 @@ pub async fn terminal_init(
             ssh_key.username(),
             (&ssh_key).into(),
             params.into(),
-            SshTimeout::keepalive_secs(30),
+            timeout_config,
         )
         .await?)
     }
