@@ -1,3 +1,4 @@
+use dodosh::terminal::TermSize;
 use dodosh::{terminal, SshTimeout};
 
 use crate::dependencies::Dependencies;
@@ -18,14 +19,18 @@ pub async fn terminal_init(
         .keepalive_secs(30)
         .build();
 
-    if let Some(ref container_name) = params.container_name.clone() {
+    if let TerminalParams {
+        cols,
+        rows,
+        container_name: Some(ref container_name),
+    } = params
+    {
         let server_type = server.server_type();
 
+        let params = TermSize::dims(cols, rows);
+
         if server_type.is_local() {
-            Ok(
-                terminal::connect_docker_local(container_name, params.into(), timeout_config)
-                    .await?,
-            )
+            Ok(terminal::connect_docker_local(container_name, params, timeout_config).await?)
         } else {
             Ok(terminal::connect_docker_remote(
                 server.hostname().as_ref(),
@@ -33,7 +38,7 @@ pub async fn terminal_init(
                 ssh_key.username(),
                 (&ssh_key).into(),
                 container_name,
-                params.into(),
+                params,
                 timeout_config,
             )
             .await?)

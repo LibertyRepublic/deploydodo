@@ -187,7 +187,7 @@ async fn session_init(
         inactivity_timeout: timeout_config.inactivity_secs.map(Duration::from_secs),
         keepalive_interval: timeout_config.keepalive_secs.map(Duration::from_secs),
         keepalive_max: timeout_config.keepalive_max,
-        ..<_>::default()
+        ..Default::default()
     });
 
     let mut handle = client::connect(config, (hostname, port), Handler).await?;
