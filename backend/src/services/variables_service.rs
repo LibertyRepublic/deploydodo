@@ -20,6 +20,13 @@ pub enum VariableKey {
     IsProjectSetup,
 }
 
+impl ToString for VariableKey {
+    fn to_string(&self) -> String {
+        self.serialize(VariableKeySerializer)
+            .expect("VariableKey must always be serializable")
+    }
+}
+
 #[derive(Debug, FromRow)]
 pub struct Variable {
     pub name: String,
@@ -28,7 +35,7 @@ pub struct Variable {
 
 impl VariableValueByKey for Vec<Variable> {
     fn get_boolean(&self, key: VariableKey) -> Option<bool> {
-        let key_literal: String = key.serialize(VariableKeySerializer).ok()?;
+        let key_literal: String = key.to_string();
         self.iter().find_map(move |var| {
             if key_literal == var.name.as_str() {
                 var.value.parse::<bool>().ok()
@@ -57,7 +64,7 @@ impl VariablesService {
         )
     }
 
-    async fn set(&self, name: &str, value: String) -> AppResult<()> {
+    async fn set(&self, name: String, value: String) -> AppResult<()> {
         sqlx::query(
             "INSERT INTO variables (name, value, created_at) VALUES ($1, $2, $3)
              ON CONFLICT(name) DO UPDATE SET value = excluded.value",
@@ -71,8 +78,8 @@ impl VariablesService {
         Ok(())
     }
 
-    pub async fn set_value<V: ToString>(&self, name: &str, value: V) -> AppResult<()> {
-        self.set(name, value.to_string()).await
+    pub async fn set_value<V: ToString>(&self, name: VariableKey, value: V) -> AppResult<()> {
+        self.set(name.to_string(), value.to_string()).await
     }
 }
 
