@@ -87,7 +87,11 @@ pub async fn connect_docker_remote(
     let tunnel = session.forward_docker_socket().await?;
 
     let docker_proxy = format!("127.0.0.1:{}", tunnel.local_port);
-    let docker = Docker::connect_with_http(&docker_proxy, 120, bollard::API_DEFAULT_VERSION)?;
+    let docker = Docker::connect_with_http(
+        &docker_proxy,
+        timeout_config.connect_timeout_secs,
+        bollard::API_DEFAULT_VERSION,
+    )?;
 
     let channel = connect_docker(
         docker,

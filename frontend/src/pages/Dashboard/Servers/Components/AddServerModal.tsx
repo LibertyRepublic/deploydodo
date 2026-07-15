@@ -67,9 +67,16 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
   const [error, setError] = useState<string | null>(null)
   const [jobId, setJobId] = useState<string | null>(null)
 
+  function refreshQueries() {
+    return Promise.all([
+      invalidateStatusQuery(),
+      invalidateServersQuery()
+    ])
+  }
+
   const createLocal = useCreateLocalServer({
     onSuccess: async () => {
-      await invalidateStatusQuery()
+      await refreshQueries()
       onSuccess()
       onClose()
     },
@@ -79,7 +86,7 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
   })
   const createRemote = useCreateRemoteServer({
     onSuccess: async (data) => {
-      await invalidateServersQuery()
+      await refreshQueries()
       setJobId(data.jobId)
     },
     onError: (e) => setError(e.message),
