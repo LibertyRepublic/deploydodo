@@ -1,9 +1,9 @@
 
 BEGIN;
 
-DROP TYPE JobType;
-DROP TYPE JobStatus;
 DROP TABLE IF EXISTS job_events;
 DROP TABLE IF EXISTS jobs;
+DROP TYPE JobType;
+DROP TYPE JobStatus;
 
 COMMIT;
