@@ -200,8 +200,8 @@ impl ServerService {
             id: server_id,
             name: name.to_string(),
             hostname: hostname.to_string(),
-            ssh_port: ssh_port,
-            ssh_key_id: ssh_key_id,
+            ssh_port,
+            ssh_key_id,
         })
     }
 }

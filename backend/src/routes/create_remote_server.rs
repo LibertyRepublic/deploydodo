@@ -311,7 +311,7 @@ async fn create_ssh_key(
     match auth {
         SshAuthRequest::Password { username, password } => {
             deps.ssh_service
-                .create_password_auth(&key_name, username, password)
+                .create_password_auth(key_name, username, password)
                 .await
         }
         SshAuthRequest::KeyPair {
@@ -320,7 +320,7 @@ async fn create_ssh_key(
             public_key,
         } => {
             deps.ssh_service
-                .create_key_auth(&key_name, username, private_key, public_key.as_deref())
+                .create_key_auth(key_name, username, private_key, public_key.as_deref())
                 .await
         }
     }
