@@ -151,7 +151,9 @@ jobs:
           key: cargo-debug-${{ runner.os }}
 
       - name: Install cargo-make
-        uses: taiki-e/install-action@cargo-make
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-make,sqlx-cli
 
       - name: Run DB Migrations
         run: cargo make migrate
