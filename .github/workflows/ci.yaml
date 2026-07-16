@@ -103,8 +103,7 @@ jobs:
       DATABASE_URL: postgres://deploydodo:deploydodo@localhost:5432/deploydodo
       LOCAL_SSH_HOSTNAME: localhost
       LOCAL_SSH_PORT: 22
-      LOCAL_SSH_USERNAME: benjamin
-      LOCAL_SSH_PRIVATE_KEY: ../key_rsa
+      LOCAL_SSH_USERNAME: root
     services:
       postgres:
         image: postgres:15.18-alpine3.24
@@ -139,5 +138,5 @@ jobs:
       - name: Generate RSA
         run: ./configure_rsa.sh
 
-      - name: Build
+      - name: Test
         run: cargo test
