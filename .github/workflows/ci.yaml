@@ -60,6 +60,18 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
+  cargo-clippy:
+    name: cargo fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Check formatting
+        run: cargo clippy
+
   build:
     name: cargo make build-debug
     runs-on: ubuntu-latest
