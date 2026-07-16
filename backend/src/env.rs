@@ -22,7 +22,7 @@ pub fn get_env() -> Arc<Environment> {
 
 pub fn init_env() {
     #[cfg(debug_assertions)]
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
 
     ENVIRONMENT
         .set(Arc::new(Environment {

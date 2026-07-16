@@ -25,6 +25,9 @@ pub enum AppError {
     #[error("validation error: {0}")]
     Validation(String),
 
+    #[error("not found error: {0}")]
+    NotFound(String),
+
     #[error("unauthorized")]
     Unauthorized,
 
@@ -53,6 +56,20 @@ pub enum AppError {
     DockerOperation(String),
 }
 
+impl AppError {
+    pub fn validation(message: &str) -> Self {
+        Self::Validation(message.to_owned())
+    }
+
+    pub fn not_found(message: &str) -> Self {
+        Self::NotFound(message.to_owned())
+    }
+
+    pub fn internal_server_error(message: &str) -> Self {
+        Self::Validation(message.to_owned())
+    }
+}
+
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
@@ -79,6 +96,7 @@ impl IntoResponse for AppError {
                 )
             }
             AppError::Validation(msg) => (StatusCode::UNPROCESSABLE_ENTITY, msg.clone()),
+            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
             AppError::Unauthorized => (StatusCode::UNAUTHORIZED, self.to_string()),
             AppError::InvalidCredentials => (StatusCode::UNAUTHORIZED, self.to_string()),
             AppError::LocalServerAlreadyExists => (StatusCode::CONFLICT, self.to_string()),

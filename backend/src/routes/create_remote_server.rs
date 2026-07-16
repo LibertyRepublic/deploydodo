@@ -8,7 +8,7 @@ use crate::dependencies::Dependencies;
 use crate::error::{AppError, AppResult};
 use crate::extractors::Auth;
 use crate::services::ssh_service::SshKey;
-use crate::services::types::JobType;
+use crate::services::types::{JobStatus, JobType};
 
 // ── SSH auth sub-types ────────────────────────────────────────────────────────
 
@@ -196,7 +196,10 @@ pub async fn create_remote_server(
 async fn run_job(job_id: String, request: CreateRemoteServerRequest, deps: Dependencies) {
     match handle_remote(&job_id, &request, &deps).await {
         Ok(()) => {
-            let _ = deps.job_service.finish_job(&job_id, "completed").await;
+            let _ = deps
+                .job_service
+                .finish_job(&job_id, JobStatus::Completed)
+                .await;
         }
         Err(e) => {
             tracing::error!("{e}");
@@ -204,7 +207,10 @@ async fn run_job(job_id: String, request: CreateRemoteServerRequest, deps: Depen
                 .job_service
                 .emit(&job_id, "error", json!({ "message": e.to_string() }))
                 .await;
-            let _ = deps.job_service.finish_job(&job_id, "failed").await;
+            let _ = deps
+                .job_service
+                .finish_job(&job_id, JobStatus::Failed)
+                .await;
         }
     }
 }
