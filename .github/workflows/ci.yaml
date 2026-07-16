@@ -150,7 +150,7 @@ jobs:
             target/
           key: cargo-debug-${{ runner.os }}
 
-      - name: Install cargo-make
+      - name: Install Binaries
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-make,sqlx-cli
