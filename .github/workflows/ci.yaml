@@ -121,7 +121,6 @@ jobs:
       postgres:
         image: postgres:15.18-alpine3.24
         env:
-          SQLX_OFFLINE: true
           POSTGRES_USER: deploydodo
           POSTGRES_PASSWORD: deploydodo
           POSTGRES_DB: deploydodo
