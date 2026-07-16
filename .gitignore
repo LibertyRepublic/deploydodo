@@ -9,7 +9,6 @@ frontend/dist
 # Env
 .env
 local.env
-test.env
 
 .claude
 .DS_Store
