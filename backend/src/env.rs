@@ -51,8 +51,8 @@ where
 fn read_file_path_from_env(key: &str) -> String {
     let path = read_env::<String>(key);
 
-    std::fs::read_to_string(path)
-        .expect(format!("The path stored in {key} does not exist").as_ref())
+    std::fs::read_to_string(&path)
+        .expect(format!("The path stored in {key} ({path}) does not exist").as_ref())
 }
 
 trait TypeName {

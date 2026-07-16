@@ -25,6 +25,9 @@ pub enum AppError {
     #[error("validation error: {0}")]
     Validation(String),
 
+    #[error("bad request: {0}")]
+    BadRequest(String),
+
     #[error("not found error: {0}")]
     NotFound(String),
 
@@ -61,12 +64,16 @@ impl AppError {
         Self::Validation(message.to_owned())
     }
 
+    pub fn bad_request(message: &str) -> Self {
+        Self::BadRequest(message.to_owned())
+    }
+
     pub fn not_found(message: &str) -> Self {
         Self::NotFound(message.to_owned())
     }
 
     pub fn internal_server_error(message: &str) -> Self {
-        Self::Validation(message.to_owned())
+        Self::InternalServerError(message.to_owned())
     }
 }
 
@@ -96,6 +103,7 @@ impl IntoResponse for AppError {
                 )
             }
             AppError::Validation(msg) => (StatusCode::UNPROCESSABLE_ENTITY, msg.clone()),
+            AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
             AppError::Unauthorized => (StatusCode::UNAUTHORIZED, self.to_string()),
             AppError::InvalidCredentials => (StatusCode::UNAUTHORIZED, self.to_string()),
