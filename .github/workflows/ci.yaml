@@ -121,6 +121,7 @@ jobs:
       postgres:
         image: postgres:15.18-alpine3.24
         env:
+          SQLX_OFFLINE: true
           POSTGRES_USER: deploydodo
           POSTGRES_PASSWORD: deploydodo
           POSTGRES_DB: deploydodo
@@ -148,6 +149,13 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: cargo-debug-${{ runner.os }}
+
+      - name: Run DB Migrations
+        run: cargo make migrate
+
+      - name: Check SQL query
+        run: cargo make check-query
+
       - name: Generate RSA
         run: ./configure_rsa.sh
 
