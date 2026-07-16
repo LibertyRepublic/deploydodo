@@ -13,7 +13,7 @@ use crate::{
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, sqlx::Type, Clone)]
 #[serde(rename_all = "lowercase")]
-#[sqlx(type_name = "TEXT", rename_all = "lowercase")]
+#[sqlx(type_name = "authtype", rename_all = "lowercase")]
 pub enum AuthType {
     Password,
     KeyPair,

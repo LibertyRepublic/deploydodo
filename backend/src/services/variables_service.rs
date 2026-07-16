@@ -10,7 +10,7 @@ pub trait VariableValueByKey {
 }
 
 #[derive(Debug, sqlx::Type, PartialEq)]
-#[sqlx(type_name = "TEXT", rename_all = "snake_case")]
+#[sqlx(type_name = "VARCHAR", rename_all = "snake_case")]
 pub enum VariableKey {
     IsAdminOnboarded,
     IsServerSetup,

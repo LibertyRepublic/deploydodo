@@ -12,7 +12,7 @@ use crate::{
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, sqlx::Type, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
-#[sqlx(type_name = "TEXT", rename_all = "lowercase")]
+#[sqlx(type_name = "servertype", rename_all = "lowercase")]
 pub enum ServerType {
     Local,
     Remote,
@@ -142,7 +142,7 @@ impl ServerService {
 
     pub async fn list_servers(&self) -> AppResult<Vec<Server>> {
         let rows = sqlx::query!(
-            r#"SELECT id, name, server_type AS "server_type: ServerType", hostname, ssh_port, ssh_key_id FROM servers ORDER BY id"#,
+            r#"SELECT id, name, server_type AS "server_type!: ServerType", hostname, ssh_port, ssh_key_id FROM servers ORDER BY id"#,
         )
         .fetch_all(&*self.db)
         .await?;

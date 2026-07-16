@@ -18,7 +18,7 @@ pub struct UserService {
 
 #[derive(Type, Serialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
-#[sqlx(type_name = "TEXT", rename_all = "lowercase")]
+#[sqlx(type_name = "accounttype", rename_all = "lowercase")]
 pub enum AccountType {
     Admin,
     Member,
