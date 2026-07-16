@@ -150,6 +150,9 @@ jobs:
             target/
           key: cargo-debug-${{ runner.os }}
 
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+
       - name: Run DB Migrations
         run: cargo make migrate
 
