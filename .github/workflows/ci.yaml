@@ -136,6 +136,8 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: cargo-debug-${{ runner.os }}
+      - name: Generate RSA
+        run: ./configure_rsa.sh
 
       - name: Build
         run: cargo test
