@@ -26,14 +26,14 @@ pub struct StoredEvent {
 
 #[derive(sqlx::Type, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "snake_case")]
-#[sqlx(rename_all = "snake_case")]
+#[sqlx(type_name = "jobtype", rename_all = "snake_case")]
 pub enum JobType {
     CreateServer,
 }
 
 #[derive(sqlx::Type, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "lowercase")]
-#[sqlx(rename_all = "lowercase")]
+#[sqlx(type_name = "jobstatus", rename_all = "lowercase")]
 pub enum JobStatus {
     Pending,
     Completed,
