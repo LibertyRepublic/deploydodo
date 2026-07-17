@@ -8,11 +8,11 @@ import { useState } from 'react'
 export function RemoteServerProgress({
   jobId,
   onSuccess,
-  onError,
+  onGoBack,
 }: {
   jobId: string
   onSuccess: () => void
-  onError: (msg: string) => void
+  onGoBack: () => void
 }) {
   const [steps, setSteps] = useState<ConnectingStep[]>([])
   const [internalError, setInternalError] = useState<string | null>(null)
@@ -31,19 +31,14 @@ export function RemoteServerProgress({
     <div className="flex-1 px-6 py-8 flex flex-col gap-6 items-center justify-center min-h-75">
       {internalError ? (
         <div className="flex flex-col items-center gap-4 text-center">
-          <WarningCircleIcon className="size-12 text-error" />
+          <WarningCircleIcon className="size-12 text-error!" />
           <div className="flex flex-col gap-2">
             <h3 className="font-sans font-semibold text-lg text-high-contrast m-0">
               Connection Failed
             </h3>
             <p className="font-sans text-sm text-text-secondary m-0 max-w-sm">{internalError}</p>
           </div>
-          <Button
-            type="button"
-            onClick={() => onError(internalError)}
-            variant="ghost"
-            className="mt-2"
-          >
+          <Button type="button" onClick={() => onGoBack()} variant="ghost" className="mt-2">
             Go Back
           </Button>
         </div>

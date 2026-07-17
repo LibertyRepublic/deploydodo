@@ -9,6 +9,7 @@ import { invalidateServersQuery, invalidateStatusQuery } from '@/api/queries'
 import type { SshAuthRequest } from '@/api/Api'
 import { cn } from '@/utilities/cn'
 import { AnimatePresence, motion } from 'framer-motion'
+import { SpinnerIcon } from '@/assets/icons'
 
 type FormValues = {
   serverType: 'local' | 'remote'
@@ -27,6 +28,7 @@ type AddServerFormProps = {
   onJobCreated: (jobId: string) => void
   onLocalServerCreated: () => void
   onCancel: () => void
+  serverType: 'local' | 'remote'
 }
 
 const validationSchema = Yup.object({
@@ -76,6 +78,7 @@ export function AddServerForm({
   onJobCreated,
   onLocalServerCreated,
   onCancel,
+  serverType,
 }: AddServerFormProps) {
   function refreshQueries() {
     return Promise.all([invalidateStatusQuery(), invalidateServersQuery()])
@@ -100,7 +103,7 @@ export function AddServerForm({
 
   const formik = useFormik<FormValues>({
     initialValues: {
-      serverType: 'local',
+      serverType,
       name: '',
       hostname: '',
       port: '22',
@@ -180,7 +183,7 @@ export function AddServerForm({
             errorMessage={formik.errors.name}
           />
           {/* Remote-only fields */}
-          <AnimatePresence initial={false}>
+          <AnimatePresence initial>
             {!isLocal && (
               <motion.div
                 key="remote-fields"
@@ -284,21 +287,7 @@ export function AddServerForm({
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <>
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                />
-              </svg>
+              <SpinnerIcon className="animate-spin -ml-1 mr-2 h-4 w-4" />
               Creating...
             </>
           ) : (

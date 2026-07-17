@@ -12,6 +12,7 @@ type AddServerModalProps = {
 export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps) {
   const [error, setError] = useState<string | null>(null)
   const [jobId, setJobId] = useState<string | null>(null)
+  const [serverType, setServerType] = useState<'local' | 'remote'>('local')
 
   function handleClose() {
     setError(null)
@@ -62,13 +63,15 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
               onSuccess()
               handleClose()
             }}
-            onError={(msg) => {
-              setError(msg)
+            onGoBack={() => {
+              setError(null)
               setJobId(null)
+              setServerType('remote')
             }}
           />
         ) : (
           <AddServerForm
+            serverType={serverType}
             error={error}
             onError={setError}
             onJobCreated={setJobId}
