@@ -36,10 +36,13 @@ impl FromRequestParts<Dependencies> for MaybeAuth {
         parts: &mut Parts,
         deps: &Dependencies,
     ) -> Result<Self, Self::Rejection> {
-        let user = Auth::from_request_parts(parts, deps)
+        match Auth::from_request_parts(parts, deps)
             .await
-            .ok()
-            .map(|auth| auth.0);
-        Ok(MaybeAuth(user))
+            .map(|auth| auth.0)
+        {
+            Ok(user) => Ok(MaybeAuth(Some(user))),
+            Err(AppError::Unauthorized) => Ok(MaybeAuth(None)),
+            Err(err) => Err(err),
+        }
     }
 }
