@@ -2,10 +2,7 @@ use axum::Json;
 use serde::Serialize;
 use utoipa::ToSchema;
 
-use crate::{
-    error::AppResult,
-    extractors::OptionalAuth,
-};
+use crate::{error::AppResult, extractors::OptionalAuth};
 
 #[derive(Serialize, ToSchema)]
 pub struct ValidateSessionResponse {
