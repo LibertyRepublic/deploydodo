@@ -27,20 +27,32 @@ export function ButtonGroup<T>({ onSelect, label, options, value }: ButtonGroupP
     onSelect?.(value)
   }
 
+  const selectedIndex = Math.max(
+    options.findIndex((item) => item.value === resolvedValue),
+    0,
+  )
+
   return (
     <div className="flex flex-col gap-2">
       <label className="font-sans text-base leading-6 text-secondary font-bold">{label}</label>
-      <div className="flex rounded-lg border border-neutral-100 overflow-hidden">
+      <div className="relative flex rounded-lg border border-neutral-100 overflow-hidden">
+        <div
+          className="absolute inset-y-0 left-0 bg-secondary transition-transform duration-200 ease-out"
+          style={{
+            width: `${100 / options.length}%`,
+            transform: `translateX(${selectedIndex * 100}%)`,
+          }}
+        />
         {options.map((item, i) => (
           <button
             key={i}
             type="button"
             onClick={() => onOptionSelected(item.value)}
             className={cn(
-              'flex-1 py-2 font-manrope text-sm leading-6 transition-colors',
+              'relative z-10 flex-1 py-2 font-manrope text-sm leading-6 transition-colors',
               resolvedValue === item.value
-                ? 'bg-secondary text-pure-white font-bold'
-                : 'bg-background text-text-secondary font-normal hover:text-high-contrast',
+                ? 'text-pure-white font-bold'
+                : 'text-text-secondary font-normal hover:text-high-contrast',
             )}
           >
             {item.label}

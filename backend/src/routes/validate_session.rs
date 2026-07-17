@@ -4,7 +4,7 @@ use utoipa::ToSchema;
 
 use crate::{
     error::AppResult,
-    extractors::{Auth, OptionalAuth},
+    extractors::OptionalAuth,
 };
 
 #[derive(Serialize, ToSchema)]
