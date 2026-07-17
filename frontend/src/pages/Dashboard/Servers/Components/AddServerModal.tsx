@@ -4,12 +4,15 @@ import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { useCreateLocalServer, useCreateRemoteServer } from '@/api/mutations'
 import { TextInput } from '@/components/TextInput'
+import { Textarea } from '@/components/Textarea'
 import { Button } from '@/components/Button'
 import { cn } from '@/utilities/cn'
 import { useJobEvents } from '@/hooks/useJobEvents'
 import type { ConnectingStep } from '@/api/types'
 import { SpinnerIcon, CheckCircleIcon, WarningCircleIcon } from '@/assets/icons'
 import { invalidateServersQuery, invalidateStatusQuery } from '@/api/queries'
+import { ButtonGroup } from '@/components/ButtonGroup'
+import type { SshAuthRequest } from '@/api/Api'
 
 type FormValues = {
   serverType: 'local' | 'remote'
@@ -30,7 +33,13 @@ type AddServerModalProps = {
 
 const validationSchema = Yup.object({
   name: Yup.string().trim().required('Server name is required'),
-  hostname: Yup.string().trim().required('Hostname is required'),
+  hostname: Yup.string()
+    .trim()
+    .when('serverType', {
+      is: 'remote' as const,
+      then: (s) => s.trim().required('Hostname is required'),
+      otherwise: (s) => s,
+    }),
   port: Yup.string().when('serverType', {
     is: 'remote' as const,
     then: (s) =>
@@ -65,13 +74,10 @@ const validationSchema = Yup.object({
 
 export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps) {
   const [error, setError] = useState<string | null>(null)
-  const [jobId, setJobId] = useState<string | null>(null)
+  const [jobId, setJobId] = useState<string | null>('c4082e6d-971d-4c6c-a648-646c359394c1')
 
   function refreshQueries() {
-    return Promise.all([
-      invalidateStatusQuery(),
-      invalidateServersQuery()
-    ])
+    return Promise.all([invalidateStatusQuery(), invalidateServersQuery()])
   }
 
   const createLocal = useCreateLocalServer({
@@ -113,18 +119,18 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
       if (values.serverType === 'local') {
         createLocal.mutate({ name: values.name.trim() })
       } else {
-        const auth =
+        const auth: SshAuthRequest =
           values.authMethod === 'password'
-            ? ({
+            ? {
                 authType: 'password',
                 username: values.username.trim(),
                 password: values.password,
-              } as const)
-            : ({
+              }
+            : {
                 authType: 'keypair',
                 username: values.username.trim(),
                 privateKey: values.privateKey.trim(),
-              } as const)
+              }
 
         createRemote.mutate({
           name: values.name.trim(),
@@ -135,6 +141,8 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
       }
     },
   })
+
+  const isLocal = formik.values.serverType === 'local'
 
   function reset() {
     formik.resetForm()
@@ -193,8 +201,8 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
           <RemoteServerProgress
             jobId={jobId}
             onSuccess={() => {
-              onSuccess()
-              handleClose()
+              // onSuccess()
+              // handleClose()
             }}
             onError={(msg) => {
               setError(msg)
@@ -204,188 +212,139 @@ export function AddServerModal({ open, onClose, onSuccess }: AddServerModalProps
         ) : (
           <>
             {/* Scrollable Body */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-5">
-              {/* Server type toggle */}
-              <div className="flex flex-col gap-2">
-                <label className="font-sans font-normal text-base leading-6 text-secondary">
-                  Server Type
-                </label>
-                <div className="flex rounded-lg border border-neutral-100 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => formik.setFieldValue('serverType', 'local')}
-                    className={cn(
-                      'flex-1 py-2 font-manrope text-sm leading-6 transition-colors',
-                      formik.values.serverType === 'local'
-                        ? 'bg-secondary text-pure-white font-bold'
-                        : 'bg-background text-text-secondary font-normal hover:text-high-contrast',
-                    )}
-                  >
-                    Local
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => formik.setFieldValue('serverType', 'remote')}
-                    className={cn(
-                      'flex-1 py-2 font-manrope text-sm leading-6 transition-colors',
-                      formik.values.serverType === 'remote'
-                        ? 'bg-secondary text-pure-white font-bold'
-                        : 'bg-background text-text-secondary font-normal hover:text-high-contrast',
-                    )}
-                  >
-                    Remote
-                  </button>
-                </div>
-              </div>
-
-              {/* Common fields */}
-              <TextInput
-                label="Name"
-                name="name"
-                value={formik.values.name}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                placeholder="My Server"
-                required
-                hasError={formik.touched.name && !!formik.errors.name}
-                errorMessage={
-                  formik.touched.name && formik.errors.name ? formik.errors.name : undefined
-                }
-              />
-              <TextInput
-                label="Hostname"
-                name="hostname"
-                value={formik.values.hostname}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                placeholder="192.168.1.100"
-                required
-                hasError={formik.touched.hostname && !!formik.errors.hostname}
-                errorMessage={
-                  formik.touched.hostname && formik.errors.hostname
-                    ? formik.errors.hostname
-                    : undefined
-                }
-              />
-
-              {/* Remote-only fields */}
-              {formik.values.serverType === 'remote' && (
-                <>
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <div className="min-h-70 flex flex-col gap-5">
+                {/* Server type toggle */}
+                <ButtonGroup
+                  value={formik.values.serverType}
+                  label="Server Type"
+                  onSelect={(value) => {
+                    formik.resetForm()
+                    setError(null)
+                    formik.setFieldValue('serverType', value)
+                  }}
+                  options={[
+                    {
+                      label: 'Local',
+                      value: 'local',
+                    },
+                    {
+                      label: 'Remote',
+                      value: 'remote',
+                    },
+                  ]}
+                />
+                {/* Common fields */}
+                <TextInput
+                  label="Name"
+                  name="name"
+                  value={formik.values.name}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="My Server"
+                  required
+                  hasError={formik.touched.name && !!formik.errors.name}
+                  errorMessage={
+                    formik.touched.name && formik.errors.name ? formik.errors.name : undefined
+                  }
+                />
+                {!isLocal && (
                   <TextInput
-                    label="Port"
-                    name="port"
-                    type="number"
-                    value={formik.values.port}
+                    label="Hostname"
+                    name="hostname"
+                    value={formik.values.hostname}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    placeholder="22"
-                    hasError={formik.touched.port && !!formik.errors.port}
-                    errorMessage={
-                      formik.touched.port && formik.errors.port ? formik.errors.port : undefined
-                    }
-                  />
-
-                  {/* Auth type */}
-                  <div className="flex flex-col gap-2">
-                    <label className="font-sans font-normal text-base leading-6 text-secondary">
-                      Authentication
-                    </label>
-                    <div className="flex rounded-lg border border-neutral-100 overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => formik.setFieldValue('authMethod', 'password')}
-                        className={cn(
-                          'flex-1 py-2 font-manrope text-sm leading-6 transition-colors',
-                          formik.values.authMethod === 'password'
-                            ? 'bg-secondary text-pure-white font-bold'
-                            : 'bg-background text-text-secondary font-normal hover:text-high-contrast',
-                        )}
-                      >
-                        Password
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => formik.setFieldValue('authMethod', 'keypair')}
-                        className={cn(
-                          'flex-1 py-2 font-manrope text-sm leading-6 transition-colors',
-                          formik.values.authMethod === 'keypair'
-                            ? 'bg-secondary text-pure-white font-bold'
-                            : 'bg-background text-text-secondary font-normal hover:text-high-contrast',
-                        )}
-                      >
-                        Key Pair
-                      </button>
-                    </div>
-                  </div>
-
-                  <TextInput
-                    label="Username"
-                    name="username"
-                    value={formik.values.username}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    placeholder="root"
+                    placeholder="192.168.1.100 or my.server.com"
                     required
-                    hasError={formik.touched.username && !!formik.errors.username}
+                    hasError={formik.touched.hostname && !!formik.errors.hostname}
                     errorMessage={
-                      formik.touched.username && formik.errors.username
-                        ? formik.errors.username
+                      formik.touched.hostname && formik.errors.hostname
+                        ? formik.errors.hostname
                         : undefined
                     }
                   />
+                )}
 
-                  {formik.values.authMethod === 'password' ? (
+                {/* Remote-only fields */}
+                {formik.values.serverType === 'remote' && (
+                  <>
                     <TextInput
-                      label="Password"
-                      name="password"
-                      type="password"
-                      value={formik.values.password}
+                      label="Port"
+                      name="port"
+                      type="number"
+                      value={formik.values.port}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
-                      required
-                      hasError={formik.touched.password && !!formik.errors.password}
+                      placeholder="22"
+                      hasError={formik.touched.port && !!formik.errors.port}
                       errorMessage={
-                        formik.touched.password && formik.errors.password
-                          ? formik.errors.password
+                        formik.touched.port && formik.errors.port ? formik.errors.port : undefined
+                      }
+                    />
+                    {/* Auth type */}
+                    <ButtonGroup
+                      label="Authentication"
+                      options={[
+                        { label: 'Password', value: 'password' },
+                        { label: 'Key Pair', value: 'keypair' },
+                      ]}
+                      value={formik.values.authMethod}
+                      onSelect={(value) => formik.setFieldValue('authMethod', value)}
+                    />
+
+                    <TextInput
+                      label="Username"
+                      name="username"
+                      value={formik.values.username}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      placeholder="root"
+                      required
+                      hasError={formik.touched.username && !!formik.errors.username}
+                      errorMessage={
+                        formik.touched.username && formik.errors.username
+                          ? formik.errors.username
                           : undefined
                       }
                     />
-                  ) : (
-                    <>
-                      <div className="flex flex-col gap-2">
-                        <label
-                          className="font-sans font-normal text-base leading-6 text-secondary"
-                          htmlFor="private-key"
-                        >
-                          Private Key
-                        </label>
-                        <textarea
+                    <div className="min-h-50">
+                      {formik.values.authMethod === 'password' ? (
+                        <TextInput
+                          label="Password"
+                          name="password"
+                          type="password"
+                          value={formik.values.password}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                          required
+                          hasError={formik.touched.password && !!formik.errors.password}
+                          errorMessage={
+                            formik.touched.password && formik.errors.password
+                              ? formik.errors.password
+                              : undefined
+                          }
+                        />
+                      ) : (
+                        <Textarea
+                          label="Private Key"
                           id="private-key"
                           name="privateKey"
                           value={formik.values.privateKey}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
                           placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
-                          className={cn(
-                            'w-full bg-background border border-neutral-100 rounded-lg px-3 py-2 font-mono font-normal text-xs leading-5 text-secondary outline-none resize-none focus:border-secondary transition-[border-color] duration-150',
-                            formik.touched.privateKey && formik.errors.privateKey
-                              ? 'border-error!'
-                              : '',
-                          )}
                           rows={6}
+                          hasError={formik.touched.privateKey && !!formik.errors.privateKey}
+                          errorMessage={formik.errors.privateKey}
                         />
-                        {formik.touched.privateKey && formik.errors.privateKey && (
-                          <p className="font-sans font-normal text-sm leading-6 text-error m-0">
-                            {formik.errors.privateKey}
-                          </p>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
+                      )}
+                    </div>
+                  </>
+                )}
 
-              {error && <p className="font-manrope text-sm text-error m-0">{error}</p>}
+                {error && <p className="font-manrope text-sm text-error m-0">{error}</p>}
+              </div>
             </div>
 
             {/* Footer */}
@@ -473,7 +432,7 @@ function RemoteServerProgress({
           </Button>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 w-full max-w-sm">
+        <div className="flex flex-col gap-4 max-w-sm">
           {steps.map((step) => (
             <div key={step.key} className="flex items-center gap-3">
               <div className="size-6 flex items-center justify-center shrink-0">

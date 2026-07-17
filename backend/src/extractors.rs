@@ -26,3 +26,26 @@ impl FromRequestParts<Dependencies> for Auth {
         Err(AppError::Unauthorized)
     }
 }
+
+pub struct OptionalAuth(pub Option<User>);
+
+impl FromRequestParts<Dependencies> for OptionalAuth {
+    type Rejection = AppError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        deps: &Dependencies,
+    ) -> Result<Self, Self::Rejection> {
+        if let Some(bearer_token) = parts.extensions.get::<BearerToken>() {
+            let user = deps
+                .session_service
+                .get_session_user(bearer_token.token())
+                .await?;
+
+            if let Some(user) = user {
+                return Ok(OptionalAuth(Some(user)));
+            }
+        }
+        Ok(OptionalAuth(None))
+    }
+}
