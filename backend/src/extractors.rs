@@ -36,16 +36,10 @@ impl FromRequestParts<Dependencies> for OptionalAuth {
         parts: &mut Parts,
         deps: &Dependencies,
     ) -> Result<Self, Self::Rejection> {
-        if let Some(bearer_token) = parts.extensions.get::<BearerToken>() {
-            let user = deps
-                .session_service
-                .get_session_user(bearer_token.token())
-                .await?;
-
-            if let Some(user) = user {
-                return Ok(OptionalAuth(Some(user)));
-            }
-        }
-        Ok(OptionalAuth(None))
+        let user = Auth::from_request_parts(parts, deps)
+            .await
+            .ok()
+            .map(|auth| auth.0);
+        Ok(OptionalAuth(user))
     }
 }
