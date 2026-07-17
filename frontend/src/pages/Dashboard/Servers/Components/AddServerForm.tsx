@@ -1,5 +1,4 @@
 import { useFormik } from 'formik'
-import * as Yup from 'yup'
 import { useCreateLocalServer, useCreateRemoteServer } from '@/api/mutations'
 import { TextInput } from '@/components/TextInput'
 import { Textarea } from '@/components/Textarea'
@@ -10,19 +9,9 @@ import type { SshAuthRequest } from '@/api/Api'
 import { cn } from '@/utilities/cn'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SpinnerIcon } from '@/assets/icons'
+import { addServerValidationSchema } from '@/validations/addServer'
 
-type FormValues = {
-  serverType: 'local' | 'remote'
-  name: string
-  hostname: string
-  port: string
-  username: string
-  authMethod: 'password' | 'keypair'
-  password: string
-  privateKey: string
-}
-
-type AddServerFormProps = {
+export type AddServerFormProps = {
   error: string | null
   onError: (message: string | null) => void
   onJobCreated: (jobId: string) => void
@@ -30,47 +19,6 @@ type AddServerFormProps = {
   onCancel: () => void
   serverType: 'local' | 'remote'
 }
-
-const validationSchema = Yup.object({
-  name: Yup.string().trim().required('Server name is required'),
-  hostname: Yup.string()
-    .trim()
-    .when('serverType', {
-      is: 'remote' as const,
-      then: (s) => s.trim().required('Hostname is required'),
-      otherwise: (s) => s,
-    }),
-  port: Yup.string().when('serverType', {
-    is: 'remote' as const,
-    then: (s) =>
-      s
-        .test('is-number', 'Port must be a number', (v) => v === '' || !isNaN(Number(v)))
-        .test('is-in-range', 'Port must be between 1 and 65535', (v) => {
-          if (v === '') return false
-          const n = Number(v)
-          return n >= 1 && n <= 65535
-        })
-        .required('Port is required'),
-    otherwise: (s) => s,
-  }),
-  username: Yup.string().when('serverType', {
-    is: 'remote' as const,
-    then: (s) => s.trim().required('Username is required'),
-    otherwise: (s) => s,
-  }),
-  privateKey: Yup.string().when(['authMethod', 'serverType'], {
-    is: (authMethod: string, serverType: string) =>
-      authMethod === 'keypair' && serverType === 'remote',
-    then: (s) => s.trim().required('Private key is required'),
-    otherwise: (s) => s,
-  }),
-  password: Yup.string().when(['authMethod', 'serverType'], {
-    is: (authMethod: string, serverType: string) =>
-      authMethod === 'password' && serverType === 'remote',
-    then: (s) => s.required('Password is required'),
-    otherwise: (s) => s,
-  }),
-})
 
 export function AddServerForm({
   error,
@@ -101,7 +49,7 @@ export function AddServerForm({
 
   const isSubmitting = createLocal.isPending || createRemote.isPending
 
-  const formik = useFormik<FormValues>({
+  const formik = useFormik({
     initialValues: {
       serverType,
       name: '',
@@ -112,7 +60,7 @@ export function AddServerForm({
       password: '',
       privateKey: '',
     },
-    validationSchema,
+    validationSchema: addServerValidationSchema,
     validateOnMount: false,
     onSubmit: (values) => {
       onError(null)
