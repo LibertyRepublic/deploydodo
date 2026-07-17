@@ -27,9 +27,9 @@ impl FromRequestParts<Dependencies> for Auth {
     }
 }
 
-pub struct OptionalAuth(pub Option<User>);
+pub struct MaybeAuth(pub Option<User>);
 
-impl FromRequestParts<Dependencies> for OptionalAuth {
+impl FromRequestParts<Dependencies> for MaybeAuth {
     type Rejection = AppError;
 
     async fn from_request_parts(
@@ -40,6 +40,6 @@ impl FromRequestParts<Dependencies> for OptionalAuth {
             .await
             .ok()
             .map(|auth| auth.0);
-        Ok(OptionalAuth(user))
+        Ok(MaybeAuth(user))
     }
 }

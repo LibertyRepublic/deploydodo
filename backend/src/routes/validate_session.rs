@@ -2,7 +2,7 @@ use axum::Json;
 use serde::Serialize;
 use utoipa::ToSchema;
 
-use crate::{error::AppResult, extractors::OptionalAuth};
+use crate::{error::AppResult, extractors::MaybeAuth};
 
 #[derive(Serialize, ToSchema)]
 pub struct ValidateSessionResponse {
@@ -18,7 +18,7 @@ pub struct ValidateSessionResponse {
     tag = "auth"
 )]
 pub async fn validate_session(
-    OptionalAuth(user): OptionalAuth,
+    MaybeAuth(user): MaybeAuth,
 ) -> AppResult<Json<ValidateSessionResponse>> {
     Ok(Json(ValidateSessionResponse {
         valid: user.is_some(),
