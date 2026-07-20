@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Button } from '@/components/Button'
 import { SectionCard, SectionHeader } from '..'
 import { useTerminalSocket } from '@/hooks/useTerminal'
 import type { TerminalMessage } from '@/hooks/useTerminal'
 
-import { type Line, LineView } from './terminal/TerminalOutput'
+import { type Line } from './terminal/terminalOutputHelpers'
+import { LineView } from './terminal/TerminalOutput'
 import { TerminalPrompt } from './terminal/TerminalPrompt'
 // import { useAutoConnect } from './terminal/useAutoConnect'
 import { useAutoScroll } from './terminal/useAutoScroll'
@@ -165,15 +167,16 @@ export function TerminalTab({ serverId }: Props) {
       {error && (
         <div className="mb-4 px-3 py-2 rounded bg-[#3a2020] border border-[#d75f5f] font-manrope text-sm text-[#d75f5f]">
           {error}
-          <button
+          <Button
+            variant="ghost"
             onClick={() => {
               setError(null)
               setSelectedContainer(null)
             }}
-            className="ml-3 underline hover:no-underline"
+            className="ml-3 underline hover:no-underline !p-0"
           >
             Pick another container
-          </button>
+          </Button>
         </div>
       )}
       <div

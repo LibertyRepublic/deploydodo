@@ -9,7 +9,7 @@ export function Button({ variant = 'primary', fullWidth = false, children, class
   return (
     <button
       className={[
-        'flex items-center justify-center px-4 py-2 rounded-lg font-manrope font-bold text-sm leading-6 text-center whitespace-nowrap overflow-hidden transition-opacity duration-150 hover:opacity-[0.88] active:opacity-75',
+        'flex items-center justify-center px-4 py-2 rounded-lg font-manrope font-bold text-sm leading-6 text-center whitespace-nowrap overflow-hidden transition-opacity duration-150 hover:opacity-[0.88] active:opacity-75 disabled:opacity-50 disabled:cursor-not-allowed',
         variant === 'primary' ? 'bg-secondary text-pure-white' : 'bg-transparent text-secondary',
         fullWidth ? 'w-full' : '',
         className ?? '',

@@ -1,5 +1,8 @@
 import { queryOptions, useQuery } from '@tanstack/react-query'
 import { api, handleQuery, queryClient } from '@/api/client'
+import type { components } from '@/api/schema'
+
+type ServerResponse = components['schemas']['ServerResponse']
 
 const statusOptions = queryOptions({
   queryKey: ['status'],
@@ -19,9 +22,9 @@ export function useStatusQuery() {
   return useQuery(statusOptions)
 }
 
-const serversOptions = queryOptions({
+const serversOptions = queryOptions<ServerResponse[]>({
   queryKey: ['servers'],
-  queryFn: handleQuery(api.listServers),
+  queryFn: handleQuery<ServerResponse[]>(api.listServers),
 })
 
 export const invalidateServersQuery = () =>

@@ -14,4 +14,4 @@ export const loginRoute = createRoute({
     }
   },
   loader: statusQuery,
-}).lazy(() => import('./Login').then((page) => page.LoginRoute))
+}).lazy(() => import('./loginRoute').then((page) => page.LoginRoute))

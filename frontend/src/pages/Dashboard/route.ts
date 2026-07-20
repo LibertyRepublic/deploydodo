@@ -5,7 +5,7 @@ const dashboardParentRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dashboard',
   beforeLoad: requireAuth,
-}).lazy(() => import('./DashboardLayout').then((page) => page.DashboardLayoutRoute))
+}).lazy(() => import('./dashboardLayoutRoute').then((page) => page.DashboardLayoutRoute))
 
 const dashboardIndexRoute = createRoute({
   getParentRoute: () => dashboardParentRoute,
@@ -50,7 +50,7 @@ const keysRoute = createRoute({
 const terminalRoute = createRoute({
   getParentRoute: () => dashboardParentRoute,
   path: '/terminal',
-}).lazy(() => import('./Terminal').then((page) => page.TerminalRoute))
+}).lazy(() => import('./Terminal/terminalRoute').then((page) => page.TerminalRoute))
 
 const settingsRoute = createRoute({
   getParentRoute: () => dashboardParentRoute,

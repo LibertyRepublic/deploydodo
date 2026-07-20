@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { type Line } from './TerminalOutput'
+import { type Line } from './terminalOutputHelpers'
 
 export function useAutoScroll(lines: Line[]) {
   const containerRef = useRef<HTMLDivElement>(null)

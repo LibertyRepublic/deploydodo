@@ -1,4 +1,5 @@
 import { WarningTriangleIcon } from '@/assets/icons'
+import { Button } from '@/components/Button'
 import { Card } from '@/pages/Dashboard/Servers/PageLayout'
 
 export function ConnectionFailedView({
@@ -33,20 +34,12 @@ export function ConnectionFailedView({
         </div>
 
         <div className="flex gap-4 w-[480px]">
-          <button
-            type="button"
-            onClick={onGoBack}
-            className="flex-1 bg-secondary text-pure-white font-manrope font-bold text-sm leading-6 rounded-lg px-4 py-2 hover:opacity-[0.88] active:opacity-75 transition-opacity duration-150"
-          >
+          <Button type="button" fullWidth onClick={onGoBack}>
             Go back
-          </button>
-          <button
-            type="button"
-            onClick={onRetry}
-            className="flex-1 border border-secondary text-secondary font-manrope font-bold text-sm leading-6 rounded-lg px-4 py-2 hover:bg-secondary hover:text-pure-white transition-colors duration-150"
-          >
+          </Button>
+          <Button type="button" fullWidth variant="ghost" onClick={onRetry}>
             Retry connection
-          </button>
+          </Button>
         </div>
       </div>
     </Card>

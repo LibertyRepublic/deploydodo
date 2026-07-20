@@ -1,4 +1,5 @@
 import { CheckIcon } from '@/assets/icons'
+import { cn } from '@/utilities/cn'
 
 const steps = [
   { number: 1, label: 'Server' },
@@ -26,33 +27,33 @@ export function Stepper({
           <div key={step.number} className="flex items-center gap-4 flex-1 last:flex-none">
             <div className="flex items-center gap-2 shrink-0">
               <div
-                className={[
+                className={cn(
                   'w-5 h-5 rounded-full flex items-center justify-center',
-                  done || active ? 'bg-high-contrast border border-high-contrast' : '',
-                  upcoming ? 'border border-secondary' : '',
-                  !done && !active && !upcoming ? 'border border-[#e5e7eb]' : '',
-                ].join(' ')}
+                  (done || active) && 'bg-high-contrast border border-high-contrast',
+                  upcoming && 'border border-secondary',
+                  !done && !active && !upcoming && 'border border-[#e5e7eb]',
+                )}
               >
                 {done ? (
                   <CheckIcon className="w-[14px] h-[14px]" />
                 ) : (
                   <span
-                    className={[
+                    className={cn(
                       'font-manrope font-semibold text-xs leading-3',
-                      active ? 'text-pure-white' : '',
-                      upcoming ? 'text-secondary' : '',
-                      !active && !upcoming ? 'text-[#4a5565]' : '',
-                    ].join(' ')}
+                      active && 'text-pure-white',
+                      upcoming && 'text-secondary',
+                      !active && !upcoming && 'text-[#4a5565]',
+                    )}
                   >
                     {step.number}
                   </span>
                 )}
               </div>
               <span
-                className={[
+                className={cn(
                   'font-manrope font-semibold text-sm leading-4',
                   done || active || upcoming ? 'text-high-contrast' : 'text-[#4a5565]',
-                ].join(' ')}
+                )}
               >
                 {step.label}
               </span>

@@ -56,14 +56,9 @@ export function LocalServerView({
     <>
       <Card className="p-8">
         <div className="flex flex-col gap-6">
-          <button
-            type="button"
-            onClick={onBack}
-            className="text-high-contrast hover:opacity-70 transition-opacity shrink-0"
-            aria-label="Go back"
-          >
+          <Button variant="ghost" type="button" onClick={onBack} aria-label="Go back" className="!p-0">
             <ArrowBackIcon />
-          </button>
+          </Button>
 
           <div className="flex flex-col gap-2">
             <h2 className="font-sans font-semibold text-2xl leading-8 text-high-contrast m-0">
@@ -98,11 +93,7 @@ export function LocalServerView({
               </div>
             )}
 
-            <Button
-              type="submit"
-              disabled={createLocal.isPending || !name}
-              className="w-full bg-secondary text-pure-white font-manrope font-bold text-sm leading-6 rounded-lg px-4 py-2 hover:opacity-[0.88] active:opacity-75 transition-opacity duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <Button type="submit" fullWidth disabled={createLocal.isPending || !name}>
               {createLocal.isPending ? 'Configuring…' : 'Configure Server'}
             </Button>
           </form>

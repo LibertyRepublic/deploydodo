@@ -1,4 +1,5 @@
 import { CheckCircleOutlineIcon } from '@/assets/icons'
+import { Button } from '@/components/Button'
 import { useToast } from '@/components/Toast'
 import { Card } from '@/pages/Dashboard/Servers/PageLayout'
 
@@ -23,13 +24,9 @@ export function SetupCompleteView({ onGoToDashboard }: { onGoToDashboard: () => 
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleGoToDashboard}
-          className="w-150 bg-secondary text-pure-white font-manrope font-bold text-sm leading-6 rounded-lg px-4 py-2 hover:opacity-[0.88] active:opacity-75 transition-opacity duration-150"
-        >
+        <Button type="button" fullWidth onClick={handleGoToDashboard} className="w-150!">
           Go to Dashboard
-        </button>
+        </Button>
       </div>
     </Card>
   )

@@ -3,13 +3,8 @@ import { motion } from 'framer-motion'
 import { StaggerContainer, StaggerItem, staggerItemVariants } from '@/components/Animated'
 import { useServersQuery } from '@/api/queries'
 import { TerminalSession } from './TerminalSession'
-import { createLazyRoute } from '@tanstack/react-router'
 
-export const TerminalRoute = createLazyRoute('terminal')({
-  component: Terminal
-})
-
-function Terminal() {
+export function Terminal() {
   const { data: servers, isLoading } = useServersQuery()
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
@@ -27,7 +22,7 @@ function Terminal() {
           </p>
         </StaggerItem>
 
-        {servers && servers.length > 0 && (
+        {servers && servers.length > 0 ? (
           <motion.select
             variants={staggerItemVariants}
             value={activeId ?? undefined}
@@ -40,7 +35,7 @@ function Terminal() {
               </option>
             ))}
           </motion.select>
-        )}
+        ) : null}
       </div>
 
       <StaggerItem>
@@ -51,7 +46,6 @@ function Terminal() {
             No servers available. Add a server to open a terminal.
           </p>
         ) : (
-          // key forces a fresh terminal + socket when switching servers
           <TerminalSession key={activeId} serverId={activeId} />
         )}
       </StaggerItem>

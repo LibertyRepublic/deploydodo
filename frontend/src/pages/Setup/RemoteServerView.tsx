@@ -207,11 +207,7 @@ export function RemoteServerView({
               </p>
             )}
 
-            <Button
-              type="submit"
-              disabled={isPending}
-              className="w-full bg-secondary text-pure-white font-manrope font-bold text-sm leading-6 rounded-lg px-4 py-2 hover:opacity-[0.88] active:opacity-75 transition-opacity duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <Button type="submit" fullWidth disabled={isPending}>
               {isPending ? 'Connecting…' : 'Connect & Continue'}
             </Button>
           </form>
