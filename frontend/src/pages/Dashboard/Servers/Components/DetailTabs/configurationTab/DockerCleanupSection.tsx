@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Button } from '@/components/Button'
-import { FileDownloadIcon, AlertTriangleIcon, DotsHorizontalIcon, ChevronUpIcon } from '@/assets/svg'
+import { Toggle } from '@/components/Toggle'
+import { FileDownloadIcon, AlertTriangleIcon, DotsHorizontalIcon, ChevronUpIcon } from '@/assets/icons'
 import { TextInput } from '@/components/TextInput'
 import { Table, type Column } from '@/components/Table'
 import { mockExecutions } from '../mockData'
-import { Toggle, SectionCard, SaveButton, OutlineButton } from '../..'
+import { SectionCard } from '../..'
 
 type ExecutionRow = {
   id: number
@@ -58,8 +59,8 @@ export function DockerCleanupSection() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <OutlineButton onClick={() => {}}>Start clean up</OutlineButton>
-          <SaveButton type="button" onClick={() => {}} />
+          <Button variant='outline' onClick={() => {}}>Start clean up</Button>
+          <Button type="button" onClick={() => {}}>Save</Button>
         </div>
       </div>
 

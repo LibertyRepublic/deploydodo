@@ -1,4 +1,4 @@
-import { OutlineButton } from '../..'
+import { Button } from "@/components/Button"
 
 export function DestinationsSection() {
   return (
@@ -11,8 +11,8 @@ export function DestinationsSection() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <OutlineButton onClick={() => { }}>Add</OutlineButton>
-          <OutlineButton onClick={() => { }}>Find Destinations</OutlineButton>
+          <Button variant="outline" onClick={() => { }}>Add</Button>
+          <Button variant="outline" onClick={() => { }}>Find Destinations</Button>
         </div>
       </div>
 

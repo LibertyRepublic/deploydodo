@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { SelectField, SectionCard, SaveButton, AreaChart, BarChart } from '../..'
+import { SectionCard, AreaChart, BarChart } from '../..'
+import { SelectField } from '@/components/SelectField'
+import { Button } from '@/components/Button'
 
 export function MetricsSection() {
   const [metricsInterval, setMetricsInterval] = useState('5mins')
@@ -13,7 +15,7 @@ export function MetricsSection() {
             Advanced configuration for your server
           </span>
         </div>
-        <SaveButton type="button" onClick={() => { }} />
+        <Button type="button" onClick={() => { }}>Save</Button>
       </div>
 
       <div className="flex flex-col gap-2 max-w-full">

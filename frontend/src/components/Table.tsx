@@ -3,7 +3,8 @@ import { cn } from '@/utilities/cn'
 
 export type Column<T> = {
   header: string
-  width?: string
+  width?: string | number
+  widthClassName?: string
   cell: (row: T, index: number) => ReactNode
   cellClassName?: string
   headerClassName?: string
@@ -18,6 +19,10 @@ type TableProps<T> = {
   emptyState?: ReactNode
 }
 
+function ColumnDivider() {
+  return <span className="absolute right-0 top-2 bottom-2 w-px bg-neutral-100" />
+}
+
 export function Table<T>({
   columns,
   data,
@@ -26,6 +31,8 @@ export function Table<T>({
   keyFrom,
   emptyState,
 }: TableProps<T>) {
+  const isLast = (i: number) => i === columns.length - 1
+
   return (
     <div className={cn('border border-neutral-100 rounded-xl overflow-hidden', className)}>
       <table className="w-full border-collapse">
@@ -35,13 +42,14 @@ export function Table<T>({
               <th
                 key={col.header}
                 className={cn(
-                  'px-4 py-2.5 text-left font-manrope font-bold text-xs text-text-secondary uppercase tracking-wide',
-                  i < columns.length - 1 && 'border-r-inset',
+                  'relative px-4 py-2.5 text-left font-manrope font-bold text-xs text-text-secondary uppercase tracking-wide',
+                  col.widthClassName,
                   col.headerClassName,
                 )}
-                style={col.width && !col.width.startsWith('w-') ? { width: col.width } : undefined}
+                style={col.width !== undefined ? { width: col.width } : undefined}
               >
                 {col.header}
+                {!isLast(i) && <ColumnDivider />}
               </th>
             ))}
           </tr>
@@ -59,21 +67,20 @@ export function Table<T>({
                 key={keyFrom?.(row, index) ?? index}
                 onClick={() => onRowClick?.(row)}
                 className={cn(
-                  'border-b border-neutral-100 last:border-b-0 transition-colors',
+                  'border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-200/40',
                   onRowClick && 'cursor-pointer',
-                  'hover:bg-neutral-200/40',
                 )}
               >
                 {columns.map((col, i) => (
                   <td
                     key={col.header}
                     className={cn(
-                      'px-4 py-3 font-manrope text-sm text-text-secondary',
-                      i < columns.length - 1 && 'border-r-inset',
+                      'relative px-4 py-3 font-manrope text-sm text-text-secondary',
                       col.cellClassName,
                     )}
                   >
                     {col.cell(row, index)}
+                    {!isLast(i) && <ColumnDivider />}
                   </td>
                 ))}
               </tr>

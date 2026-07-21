@@ -6,7 +6,7 @@ import { Button } from '@/components/Button'
 import { useToast } from '@/components/Toast'
 import { useCreateAdmin } from '@/api/mutations'
 import { EyeOpenIcon, EyeClosedIcon } from '@/assets/icons'
-import { ArrowLeftIcon, CheckmarkCircleIcon } from '@/assets/svg'
+import { ArrowLeftIcon, CheckmarkCircleIcon } from '@/assets/icons/index copy'
 import { setAuthToken } from '@/api/client'
 import { invalidateStatusQuery } from '@/api/queries'
 

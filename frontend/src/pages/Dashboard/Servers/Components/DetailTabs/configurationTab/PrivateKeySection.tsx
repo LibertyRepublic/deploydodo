@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/Button'
-import { DotsHorizontalIcon, WifiIcon } from '@/assets/svg'
-import { OutlineButton } from '../..'
+import { DotsHorizontalIcon, WifiIcon } from '@/assets/icons/index copy'
 import { mockPrivateKeys } from '../mockData'
 
 export function PrivateKeySection() {
@@ -12,13 +11,13 @@ export function PrivateKeySection() {
       <div className="flex items-center justify-between">
         <h2 className="font-sans font-bold text-3xl text-high-contrast m-0">Private Key</h2>
         <div className="flex items-center gap-2">
-          <OutlineButton onClick={() => {}}>
+          <Button variant="outline" onClick={() => {}}>
             <span className="font-sans font-bold mr-1">+</span> Add
-          </OutlineButton>
-          <OutlineButton onClick={() => {}}>
+          </Button>
+          <Button variant="outline" onClick={() => {}}>
             <WifiIcon className="size-4 mr-1.5 shrink-0" />
             Check connection
-          </OutlineButton>
+          </Button>
         </div>
       </div>
 

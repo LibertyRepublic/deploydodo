@@ -1,6 +1,6 @@
 import { Button } from '@/components/Button'
 import { Table, type Column } from '@/components/Table'
-import { DotsHorizontalIcon, ChevronUpIcon, DotsVerticalIcon } from '@/assets/svg'
+import { DotsHorizontalIcon, ChevronUpIcon, DotsVerticalIcon } from '@/assets/icons/'
 import { mockManagedResources, type ManagedResource } from './mockData'
 import { SectionCard } from '..'
 

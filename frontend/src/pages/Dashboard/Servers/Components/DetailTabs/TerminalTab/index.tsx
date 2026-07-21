@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/Button'
-import { SectionCard, SectionHeader } from '..'
+import { SectionCard, SectionHeader } from '../../'
 import { useTerminalSocket } from '@/hooks/useTerminal'
 import type { TerminalMessage } from '@/hooks/useTerminal'
 
-import { type Line } from './terminal/terminalOutputHelpers'
-import { LineView } from './terminal/TerminalOutput'
-import { TerminalPrompt } from './terminal/TerminalPrompt'
+import { type Line } from './terminalOutputHelpers'
+import { LineView } from './TerminalOutput'
+import { TerminalPrompt } from './TerminalPrompt'
 // import { useAutoConnect } from './terminal/useAutoConnect'
-import { useAutoScroll } from './terminal/useAutoScroll'
-import { useTerminalScroll } from './terminal/useTerminalScroll'
+import { useAutoScroll } from './useAutoScroll'
+import { useTerminalScroll } from './useTerminalScroll'
 
 type Props = {
   serverId: number

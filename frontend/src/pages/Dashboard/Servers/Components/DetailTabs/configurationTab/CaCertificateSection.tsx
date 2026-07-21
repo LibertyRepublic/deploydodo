@@ -3,7 +3,6 @@ import { EyeClosedIcon, EyeOpenIcon } from '@/assets/icons'
 import { caCert } from '../mockData'
 import { Button } from '@/components/Button'
 import { Textarea } from '@/components/Textarea'
-import { SaveButton, OutlineButton } from '../..'
 
 export function CaCertificateSection() {
   const [showCaCertContent, setShowCaCertContent] = useState(true)
@@ -20,8 +19,8 @@ export function CaCertificateSection() {
           </span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <OutlineButton onClick={() => {}}>Regenerate</OutlineButton>
-          <SaveButton type="button" onClick={() => {}} />
+          <Button variant='outline' onClick={() => {}}>Regenerate</Button>
+          <Button type="button" onClick={() => {}}>Save</Button>
         </div>
       </div>
 

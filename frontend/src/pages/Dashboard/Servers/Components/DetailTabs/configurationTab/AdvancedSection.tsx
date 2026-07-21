@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useFormik } from 'formik'
 import { EyeClosedIcon, EyeOpenIcon } from '@/assets/icons'
 import { TextInput } from '@/components/TextInput'
-import { SectionCard, SaveButton } from '../..'
+import { SectionCard } from '../..'
+import { Button } from '@/components/Button'
 
 export function AdvancedSection() {
   const [showConcurrentBuilds, setShowConcurrentBuilds] = useState(false)
@@ -26,7 +27,7 @@ export function AdvancedSection() {
             Advanced configuration for your server
           </span>
         </div>
-        <SaveButton />
+        <Button>Save</Button>
       </div>
 
       <SectionCard>

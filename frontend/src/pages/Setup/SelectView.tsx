@@ -1,4 +1,4 @@
-import { ServerRackIcon } from '@/assets/svg'
+import { ServerRackIcon } from '@/assets/icons/index copy'
 import { Card } from '@/pages/Dashboard/Servers/PageLayout'
 
 export type ServerOptionId = 'this-machine' | 'remote-server'

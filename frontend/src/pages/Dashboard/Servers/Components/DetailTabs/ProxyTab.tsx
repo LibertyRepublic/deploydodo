@@ -4,13 +4,12 @@ import {
   Sidebar,
   SectionCard,
   SectionHeader,
-  SaveButton,
-  OutlineButton,
-  Toggle,
-  FieldLabel,
 } from '..'
 import { TextInput } from '@/components/TextInput'
 import { Textarea } from '@/components/Textarea'
+import { Button } from '@/components/Button'
+import { Toggle } from '@/components/Toggle'
+import { FieldLabel } from '@/components/FieldLabel'
 import {
   traefikComposeLines,
   caddyFileContent,
@@ -54,8 +53,8 @@ export function ProxyTab() {
                 subtitle="Configure your proxy settings and advanced options."
                 right={
                   <div className="flex items-center gap-2">
-                    <OutlineButton>Switch proxy</OutlineButton>
-                    <SaveButton />
+                    <Button variant='outline'>Switch proxy</Button>
+                    <Button>Save</Button>
                   </div>
                 }
               />

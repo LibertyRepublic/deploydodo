@@ -5,7 +5,7 @@ import { Button } from '@/components/Button'
 import { TextInput } from '@/components/TextInput'
 import { Textarea } from '@/components/Textarea'
 import { fluentBitConfig } from '../mockData'
-import { SectionCard, SaveButton } from '../..'
+import { SectionCard } from '../..'
 
 const initialVisibility = {
   newRelicLicenseKey: false,
@@ -88,7 +88,7 @@ export function LogDrainsSection() {
             />
           </div>
           <div>
-            <SaveButton type="button" onClick={() => {}} />
+            <Button type="button" onClick={() => {}}>Save</Button>
           </div>
         </div>
       </SectionCard>
@@ -141,7 +141,7 @@ export function LogDrainsSection() {
             />
           </div>
           <div>
-            <SaveButton type="button" onClick={() => {}} />
+            <Button type="button" onClick={() => {}}>Save</Button>
           </div>
         </div>
       </SectionCard>

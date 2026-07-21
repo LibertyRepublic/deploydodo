@@ -1,16 +1,12 @@
 import { useState } from 'react'
 import { useFormik } from 'formik'
 import { EyeClosedIcon, EyeOpenIcon } from '@/assets/icons'
-import { SaveIcon, RefreshIcon, ClockIcon } from '@/assets/svg'
+import { SaveIcon, RefreshIcon, ClockIcon } from '@/assets/icons/index copy'
 import { TextInput } from '@/components/TextInput'
 import { Button } from '@/components/Button'
-import {
-  Toggle,
-  SectionCard,
-  SectionHeader,
-  OutlineButton,
-  FieldLabel,
-} from '../..'
+import { SectionCard, SectionHeader } from '../..'
+import { Toggle } from '@/components/Toggle'
+import { FieldLabel } from '@/components/FieldLabel'
 
 export function SentinelSection() {
   const [showSentinelUrl, setShowSentinelUrl] = useState(false)
@@ -73,8 +69,12 @@ export function SentinelSection() {
                   readOnly
                   className="w-full bg-background border border-neutral-100 rounded-lg px-3 py-2 font-manrope font-normal text-sm leading-6 text-text-secondary outline-none"
                 />
-                <Button variant="ghost" type="button" onClick={() => setShowSentinelUrl(!showSentinelUrl)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3">
+                <Button
+                  variant="ghost"
+                  type="button"
+                  onClick={() => setShowSentinelUrl(!showSentinelUrl)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3"
+                >
                   {showSentinelUrl ? (
                     <EyeClosedIcon className="size-4" />
                   ) : (
@@ -82,7 +82,7 @@ export function SentinelSection() {
                   )}
                 </Button>
               </div>
-              <OutlineButton>Regenerate</OutlineButton>
+              <Button variant='outline'>Regenerate</Button>
             </div>
           </div>
 

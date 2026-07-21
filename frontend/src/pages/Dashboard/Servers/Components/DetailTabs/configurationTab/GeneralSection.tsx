@@ -4,7 +4,8 @@ import * as Yup from 'yup'
 import { EyeClosedIcon, EyeOpenIcon } from '@/assets/icons'
 import { TextInput } from '@/components/TextInput'
 import { Button } from '@/components/Button'
-import { SectionCard, SectionHeader, SaveButton, SelectField } from '../..'
+import { SectionCard, SectionHeader } from '../..'
+import { SelectField } from '@/components/SelectField'
 
 export function GeneralSection() {
   const [showHostUrl, setShowHostUrl] = useState(false)
@@ -29,7 +30,7 @@ export function GeneralSection() {
         <SectionHeader
           title="General"
           subtitle="Server is reachable and validated"
-          right={<SaveButton />}
+          right={<Button>Save</Button>}
         />
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-3 gap-4">
@@ -71,7 +72,7 @@ export function GeneralSection() {
                     variant="ghost"
                     type="button"
                     onClick={() => setShowHostUrl(!showHostUrl)}
-                    className="!p-0"
+                    className="p-0!"
                   >
                     {showHostUrl ? (
                       <EyeClosedIcon className="size-4" />

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useFormik } from 'formik'
-import { SectionCard, SectionHeader, Sidebar, SaveButton, OutlineButton } from '..'
+import { SectionCard, SectionHeader, Sidebar } from '..'
+import { Button } from '@/components/Button'
 
 type SecuritySidebar = 'Server Patching' | 'Terminal Access'
 
@@ -24,7 +25,7 @@ export function SecurityTab() {
             <SectionHeader
               title="Server Patching"
               subtitle="Update your servers semi-automatically."
-              right={<OutlineButton onClick={() => { }}>Check for Updates</OutlineButton>}
+              right={<Button variant='outline' onClick={() => { }}>Check for Updates</Button>}
             />
           </SectionCard>
         )}
@@ -35,7 +36,7 @@ export function SecurityTab() {
               <SectionHeader
                 title="Server Patching"
                 subtitle="Update your servers semi-automatically."
-                right={<SaveButton label="Save" />}
+                right={<Button>Save</Button>}
               />
               <div className="flex items-center justify-between mt-6">
                 <div className="flex items-center gap-3">
@@ -46,9 +47,9 @@ export function SecurityTab() {
                     Operational
                   </span>
                 </div>
-                <OutlineButton onClick={() => { }}>
+                <Button variant='outline' onClick={() => { }}>
                   Start Proxy
-                </OutlineButton>
+                </Button>
               </div>
             </SectionCard>
           </form>
