@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::impl_deref;
+use axum::http::header::AUTHORIZATION;
 use axum::{
     body::Body,
     http::{Request, StatusCode},
@@ -7,41 +9,39 @@ use axum::{
     response::Response,
 };
 
+const QUERY_TOKEN_KEY: &str = "token";
+
 #[derive(Clone)]
 pub struct BearerToken(String);
 
-impl BearerToken {
-    pub fn token(&self) -> &str {
-        self.0.as_ref()
-    }
-}
+impl_deref!(BearerToken, String);
 
 pub async fn bearer_auth(
     req: axum::http::Request<Body>,
     next: Next,
 ) -> Result<Response, StatusCode> {
     let mut req = req;
-    if let Some(token) = bearer_token(&req) {
+    if let Some(token) = get_bearer_token_from_request(&req) {
         req.extensions_mut().insert(BearerToken(token));
     }
     Ok(next.run(req).await)
 }
 
-fn bearer_token(req: &Request<Body>) -> Option<String> {
+fn get_bearer_token_from_request(req: &Request<Body>) -> Option<String> {
     req.headers()
-        .get("Authorization")
+        .get(AUTHORIZATION)
         .and_then(|h| {
             h.to_str()
                 .ok()
                 .take_if(|s| !s.is_empty() && *s != "null")
                 .map(ToString::to_string)
         })
-        .or_else(|| query_param(req, "token"))
+        .or_else(|| get_bearer_token_from_query_params(req))
 }
 
-fn query_param(req: &Request<Body>, key: &str) -> Option<String> {
+fn get_bearer_token_from_query_params(req: &Request<Body>) -> Option<String> {
     req.uri()
         .query()
         .and_then(|q| serde_urlencoded::from_str::<HashMap<String, String>>(q).ok())
-        .and_then(|map| map.get(key).map(ToString::to_string))
+        .and_then(|map| map.get(QUERY_TOKEN_KEY).map(ToString::to_string))
 }

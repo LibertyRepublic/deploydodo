@@ -1,11 +1,11 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO users (name, email, password_hash, account_type, created_at) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, password_hash, account_type AS \"account_type: AccountType\", created_at",
+  "query": "\n            SELECT\n                id AS \"id: UserId\",\n                name,\n                email,\n                password_hash AS \"password_hash: HashedPassword\",\n                account_type AS \"account_type: AccountType\",\n                created_at\n            FROM users\n            LIMIT 1\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
+        "name": "id: UserId",
         "type_info": "Int8"
       },
       {
@@ -20,7 +20,7 @@
       },
       {
         "ordinal": 3,
-        "name": "password_hash",
+        "name": "password_hash: HashedPassword",
         "type_info": "Text"
       },
       {
@@ -45,23 +45,7 @@
       }
     ],
     "parameters": {
-      "Left": [
-        "Varchar",
-        "Varchar",
-        "Text",
-        {
-          "Custom": {
-            "name": "accounttype",
-            "kind": {
-              "Enum": [
-                "admin",
-                "member"
-              ]
-            }
-          }
-        },
-        "Timestamptz"
-      ]
+      "Left": []
     },
     "nullable": [
       false,
@@ -72,5 +56,5 @@
       false
     ]
   },
-  "hash": "71d8fe4f08a3bab7737dbd38586ff930115c3975c2173043c8ef7721f3fe2c7e"
+  "hash": "092926cb1de20e8ae8f443236c66b0e24b7f2ad3d82813eec3bd9b6190feae14"
 }

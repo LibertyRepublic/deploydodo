@@ -57,6 +57,33 @@ pub enum AppError {
 
     #[error("docker operation error: {0}")]
     DockerOperation(String),
+
+    #[error("could not parse: {0}")]
+    CouldNotParse(String),
+}
+
+impl AppError {
+    pub fn message(&self) -> String {
+        match self {
+            AppError::Validation(message) => message.to_string(),
+            AppError::Database(message) => message.to_string(),
+            AppError::Ssh(message) => message.to_string(),
+            AppError::JobNotFound => self.to_string(),
+            AppError::LocalDockerConnect(message) => message.to_string(),
+            AppError::RemoteDockerConnect(message) => message.to_string(),
+            AppError::DockerOperation(message) => message.to_string(),
+            AppError::AdminAlreadyConfigured => self.to_string(),
+            AppError::PasswordHash => self.to_string(),
+            AppError::InternalServerError(message) => message.to_string(),
+            AppError::BadRequest(message) => message.to_string(),
+            AppError::NotFound(message) => message.to_string(),
+            AppError::Unauthorized => self.to_string(),
+            AppError::InvalidCredentials => self.to_string(),
+            AppError::LocalServerAlreadyExists => self.to_string(),
+            AppError::MissingKeySecret => self.to_string(),
+            AppError::CouldNotParse(message) => message.to_string(),
+        }
+    }
 }
 
 impl AppError {
@@ -129,6 +156,7 @@ impl IntoResponse for AppError {
                 tracing::error!("docker operation error: {e}");
                 (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
             }
+            AppError::CouldNotParse(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.to_string()),
         };
 
         (status, Json(json!({ "message": message }))).into_response()

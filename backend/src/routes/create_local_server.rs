@@ -4,21 +4,14 @@ use utoipa::ToSchema;
 
 use crate::dependencies::Dependencies;
 use crate::error::{AppError, AppResult};
-use crate::extractors::Auth;
+use crate::extractors::{Auth, RequestJson};
+use crate::new_types::{NonEmptyString, ServerPort};
+use crate::services::server_service::ServerRowInput;
 use crate::services::types::{self, VariableKey};
 
 #[derive(Deserialize, ToSchema)]
 pub struct CreateLocalServerRequest {
-    pub name: String,
-}
-
-impl CreateLocalServerRequest {
-    fn validate(&self) -> AppResult<()> {
-        if self.name.trim().is_empty() {
-            return Err(AppError::Validation("Name is required".into()));
-        }
-        Ok(())
-    }
+    pub name: NonEmptyString,
 }
 
 #[derive(Serialize, ToSchema)]
@@ -28,7 +21,7 @@ pub struct CreateLocalServerResponse {
     #[serde(rename = "serverType")]
     pub server_type: types::ServerType,
     pub hostname: String,
-    pub port: u16,
+    pub port: ServerPort,
 }
 
 // ── Handler ───────────────────────────────────────────────────────────────────
@@ -48,19 +41,15 @@ pub struct CreateLocalServerResponse {
 pub async fn create_local_server(
     _: Auth,
     State(deps): State<Dependencies>,
-    Json(request): Json<CreateLocalServerRequest>,
+    RequestJson(request): RequestJson<CreateLocalServerRequest>,
 ) -> AppResult<(StatusCode, Json<CreateLocalServerResponse>)> {
-    request.validate()?;
-
     let count = deps.server_service.count_local_servers().await?;
     if count > 0 {
         return Err(AppError::LocalServerAlreadyExists);
     }
 
-    let server = deps
-        .server_service
-        .create_local_server(&request.name)
-        .await?;
+    let new_server_row = ServerRowInput::local_server(request.name.clone());
+    let server = deps.server_service.create_server(new_server_row).await?;
 
     tracing::info!(id = %server.id(), "local server created");
 

@@ -22,6 +22,7 @@ pub struct StatusResponse {
     pub is_local_server_setup: bool,
 }
 
+// FIXME: This seems quite roundabout and can be simplified with a struct returned
 #[utoipa::path(
     get,
     path = "/api/status",
@@ -43,6 +44,7 @@ pub async fn status(State(deps): State<Dependencies>) -> AppResult<Json<StatusRe
 
     let variables = deps.variables_service.get_all(variable_keys).await?;
 
+    // FIXME: Are these variables truly supposed to be optional?
     let is_admin_onboarded = variables
         .get_boolean(VariableKey::IsAdminOnboarded)
         .unwrap_or(false);
