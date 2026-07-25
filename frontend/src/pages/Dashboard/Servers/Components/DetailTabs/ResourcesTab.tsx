@@ -1,7 +1,7 @@
 import { Button } from '@/components/Button'
 import { Table, type Column } from '@/components/Table'
 import { DotsHorizontalIcon, ChevronUpIcon, DotsVerticalIcon } from '@/assets/icons/'
-import { mockManagedResources, type ManagedResource } from './mockData'
+import { mockManagedResources, type ManagedResource } from '@/pages/Dashboard/Servers/Components/DetailTabs/mockData'
 import { SectionCard } from '..'
 
 const resourceColumns: Column<ManagedResource>[] = [

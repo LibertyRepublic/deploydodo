@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { createLazyRoute, useNavigate } from '@tanstack/react-router'
 import { Logo } from '@/components/Logo'
-import { ChoosePassword } from './ChoosePassword'
-import { CreateAdminAccount } from './CreateAdminAccount'
-import { Pending } from '../Pending/Pending'
+import { ChoosePassword } from '@/pages/Onboarding/ChoosePassword'
+import { CreateAdminAccount } from '@/pages/Onboarding/CreateAdminAccount'
+import { Pending } from '@/pages/Pending/Pending'
 
 type Step = 'create-account' | 'choose-password'
 

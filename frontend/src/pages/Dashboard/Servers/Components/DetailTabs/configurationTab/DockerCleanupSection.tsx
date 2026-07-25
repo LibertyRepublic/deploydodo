@@ -4,8 +4,8 @@ import { Toggle } from '@/components/Toggle'
 import { FileDownloadIcon, AlertTriangleIcon, DotsHorizontalIcon, ChevronUpIcon } from '@/assets/icons'
 import { TextInput } from '@/components/TextInput'
 import { Table, type Column } from '@/components/Table'
-import { mockExecutions } from '../mockData'
-import { SectionCard } from '../..'
+import { mockExecutions } from '@/pages/Dashboard/Servers/Components/DetailTabs/mockData'
+import { SectionCard } from '@/pages/Dashboard/Servers/Components/index'
 
 type ExecutionRow = {
   id: number

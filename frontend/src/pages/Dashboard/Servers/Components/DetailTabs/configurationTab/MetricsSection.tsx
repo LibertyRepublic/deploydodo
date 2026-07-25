@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SectionCard, AreaChart, BarChart } from '../..'
+import { SectionCard, AreaChart, BarChart } from '@/pages/Dashboard/Servers/Components/index'
 import { SelectField } from '@/components/SelectField'
 import { Button } from '@/components/Button'
 

@@ -4,7 +4,7 @@ import * as Yup from 'yup'
 import { EyeClosedIcon, EyeOpenIcon } from '@/assets/icons'
 import { TextInput } from '@/components/TextInput'
 import { Button } from '@/components/Button'
-import { SectionCard, SectionHeader } from '../..'
+import { SectionCard, SectionHeader } from '@/pages/Dashboard/Servers/Components/index'
 import { SelectField } from '@/components/SelectField'
 
 export function GeneralSection() {

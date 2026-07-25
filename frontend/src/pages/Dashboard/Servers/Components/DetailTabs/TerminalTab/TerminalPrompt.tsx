@@ -1,5 +1,5 @@
 import { type FormEvent } from 'react'
-import { promptText } from './terminalOutputHelpers'
+import { promptText } from '@/pages/Dashboard/Servers/Components/DetailTabs/TerminalTab/terminalOutputHelpers'
 
 type Props = {
   currentDir: string

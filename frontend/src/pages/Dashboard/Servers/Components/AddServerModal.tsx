@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AddServerForm } from './AddServerForm'
-import { RemoteServerProgress } from './RemoteServerProgress'
+import { AddServerForm } from '@/pages/Dashboard/Servers/Components/AddServerForm'
+import { RemoteServerProgress } from '@/pages/Dashboard/Servers/Components/RemoteServerProgress'
 
 type AddServerModalProps = {
   open: boolean

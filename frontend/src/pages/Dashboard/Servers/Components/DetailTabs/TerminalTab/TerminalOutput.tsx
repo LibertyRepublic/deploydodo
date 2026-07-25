@@ -1,4 +1,4 @@
-import { type Line, renderOutput } from './terminalOutputHelpers'
+import { type Line, renderOutput } from '@/pages/Dashboard/Servers/Components/DetailTabs/TerminalTab/terminalOutputHelpers'
 
 type LineViewProps = {
   index: number

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/Button'
-import { DotsHorizontalIcon, WifiIcon } from '@/assets/icons/index copy'
-import { mockPrivateKeys } from '../mockData'
+import { DotsHorizontalIcon, WifiIcon } from '@/assets/icons'
+import { mockPrivateKeys } from '@/pages/Dashboard/Servers/Components/DetailTabs/mockData'
 
 export function PrivateKeySection() {
   const [keys, setKeys] = useState(mockPrivateKeys.map((k) => ({ ...k, menuOpen: false })))

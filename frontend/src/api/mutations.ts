@@ -1,5 +1,5 @@
 import { useMutation, type UseMutationOptions } from '@tanstack/react-query'
-import { api, handleMutation, type HttpError } from './client'
+import { api, handleMutation, type HttpError } from '@/api/client'
 import type {
   AdminResponse,
   CreateAdminRequest,
@@ -9,7 +9,7 @@ import type {
   LoginRequest,
   LoginResponse,
   StartJobResponse,
-} from './Api'
+} from '@/api/Api'
 
 type MutationOptions<Req, Res> = Omit<UseMutationOptions<Res, HttpError, Req>, 'mutationFn'>
 

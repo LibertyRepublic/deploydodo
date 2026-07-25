@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { StaggerContainer, StaggerItem, staggerItemVariants } from '@/components/Animated'
 import { useServersQuery } from '@/api/queries'
-import { TerminalSession } from './TerminalSession'
+import { TerminalSession } from '@/pages/Dashboard/Terminal/TerminalSession'
 
 export function Terminal() {
   const { data: servers, isLoading } = useServersQuery()

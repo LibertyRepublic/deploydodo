@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useFormik } from 'formik'
 import { EyeClosedIcon, EyeOpenIcon } from '@/assets/icons'
 import { TextInput } from '@/components/TextInput'
-import { SectionCard } from '../..'
+import { SectionCard } from '@/pages/Dashboard/Servers/Components/index'
 import { Button } from '@/components/Button'
 
 export function AdvancedSection() {

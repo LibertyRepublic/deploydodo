@@ -4,8 +4,8 @@ import { EyeClosedIcon, EyeOpenIcon } from '@/assets/icons'
 import { Button } from '@/components/Button'
 import { TextInput } from '@/components/TextInput'
 import { Textarea } from '@/components/Textarea'
-import { fluentBitConfig } from '../mockData'
-import { SectionCard } from '../..'
+import { fluentBitConfig } from '@/pages/Dashboard/Servers/Components/DetailTabs/mockData'
+import { SectionCard } from '@/pages/Dashboard/Servers/Components/index'
 
 const initialVisibility = {
   newRelicLicenseKey: false,

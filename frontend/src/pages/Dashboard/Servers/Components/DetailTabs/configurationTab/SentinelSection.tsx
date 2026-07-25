@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useFormik } from 'formik'
 import { EyeClosedIcon, EyeOpenIcon } from '@/assets/icons'
-import { SaveIcon, RefreshIcon, ClockIcon } from '@/assets/icons/index copy'
+import { SaveIcon, RefreshIcon, ClockIcon } from '@/assets/icons/index'
 import { TextInput } from '@/components/TextInput'
 import { Button } from '@/components/Button'
-import { SectionCard, SectionHeader } from '../..'
+import { SectionCard, SectionHeader } from '@/pages/Dashboard/Servers/Components/index'
 import { Toggle } from '@/components/Toggle'
 import { FieldLabel } from '@/components/FieldLabel'
 

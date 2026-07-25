@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { EyeClosedIcon, EyeOpenIcon } from '@/assets/icons'
-import { caCert } from '../mockData'
+import { caCert } from '@/pages/Dashboard/Servers/Components/DetailTabs/mockData'
 import { Button } from '@/components/Button'
 import { Textarea } from '@/components/Textarea'
 

@@ -15,7 +15,7 @@ import {
   caddyFileContent,
   fluentBitConfig,
   mockLogContent,
-} from './mockData'
+} from '@/pages/Dashboard/Servers/Components/DetailTabs/mockData'
 
 type SidebarSection = 'Configuration' | 'Dynamic Configuration' | 'Logs'
 
