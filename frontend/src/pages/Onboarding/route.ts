@@ -12,4 +12,4 @@ export const onboardingRoute = createRoute({
       throw redirect({ to: validateSession.valid ? '/welcome' : '/login' })
     }
   },
-}).lazy(() => import('./Onboarding').then((page) => page.OnboardingRoute))
+}).lazy(() => import('@/pages/Onboarding/Onboarding').then((page) => page.OnboardingRoute))

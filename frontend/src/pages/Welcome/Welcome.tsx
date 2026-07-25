@@ -2,7 +2,7 @@ import { createLazyRoute, useNavigate } from '@tanstack/react-router'
 import { welcomeRoute } from '@/pages/Welcome/route'
 import { LogoIcon } from '@/assets/icons'
 import { Button } from '@/components/Button'
-import { Pending } from '../Pending/Pending'
+import { Pending } from '@/pages/Pending/Pending'
 
 function CheckCircleIcon() {
   return (

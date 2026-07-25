@@ -1,4 +1,4 @@
-import { Outlet, useNavigate, useRouter, useLocation, createLazyRoute } from '@tanstack/react-router'
+import { Outlet, useNavigate, useRouter, useLocation } from '@tanstack/react-router'
 import { AnimatePresence } from 'framer-motion'
 import { PageTransition } from '@/components/Animated'
 import { Logo } from '@/components/Logo'
@@ -18,7 +18,6 @@ import {
 } from '@/assets/icons'
 import type { ComponentType, SVGProps } from 'react'
 import { cn } from '@/utilities/cn'
-import { Pending } from '../Pending/Pending'
 
 type NavItemDef = {
   Icon: ComponentType<SVGProps<SVGSVGElement>>
@@ -68,12 +67,7 @@ function NavItem({ Icon, label, to }: NavItemDef) {
   )
 }
 
-export const DashboardLayoutRoute = createLazyRoute('dashboard-layout')({
-  pendingComponent: Pending,
-  component: DashboardLayout
-})
-
-function DashboardLayout() {
+export function DashboardLayout() {
   const navigate = useNavigate()
   const location = useLocation()
 

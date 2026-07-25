@@ -1,5 +1,6 @@
 import { CheckCircleOutlineIcon } from '@/assets/icons'
 import type { JobCompletePayload } from '@/api/types'
+import { Button } from '@/components/Button'
 import { Card } from '@/pages/Dashboard/Servers/PageLayout'
 
 function InfoTile({ label, value }: { label: string; value: string }) {
@@ -49,13 +50,9 @@ export function ConnectionSuccessView({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onContinue}
-          className="w-120 bg-secondary text-pure-white font-manrope font-bold text-sm leading-6 rounded-lg px-4 py-2 hover:opacity-[0.88] active:opacity-75 transition-opacity duration-150"
-        >
+        <Button type="button" fullWidth onClick={onContinue} className="w-120!">
           Finish Setup
-        </button>
+        </Button>
       </div>
     </Card>
   )

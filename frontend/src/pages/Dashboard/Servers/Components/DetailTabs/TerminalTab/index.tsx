@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
-import { SectionCard, SectionHeader } from '..'
+import { Button } from '@/components/Button'
+import { SectionCard, SectionHeader } from '@/pages/Dashboard/Servers/Components/index'
 import { useTerminalSocket } from '@/hooks/useTerminal'
 import type { TerminalMessage } from '@/hooks/useTerminal'
 
-import { type Line, LineView } from './terminal/TerminalOutput'
-import { TerminalPrompt } from './terminal/TerminalPrompt'
+import { type Line } from '@/pages/Dashboard/Servers/Components/DetailTabs/TerminalTab/terminalOutputHelpers'
+import { LineView } from '@/pages/Dashboard/Servers/Components/DetailTabs/TerminalTab/TerminalOutput'
+import { TerminalPrompt } from '@/pages/Dashboard/Servers/Components/DetailTabs/TerminalTab/TerminalPrompt'
 // import { useAutoConnect } from './terminal/useAutoConnect'
-import { useAutoScroll } from './terminal/useAutoScroll'
-import { useTerminalScroll } from './terminal/useTerminalScroll'
+import { useAutoScroll } from '@/pages/Dashboard/Servers/Components/DetailTabs/TerminalTab/useAutoScroll'
+import { useTerminalScroll } from '@/pages/Dashboard/Servers/Components/DetailTabs/TerminalTab/useTerminalScroll'
 
 type Props = {
   serverId: number
@@ -165,15 +167,16 @@ export function TerminalTab({ serverId }: Props) {
       {error && (
         <div className="mb-4 px-3 py-2 rounded bg-[#3a2020] border border-[#d75f5f] font-manrope text-sm text-[#d75f5f]">
           {error}
-          <button
+          <Button
+            variant="ghost"
             onClick={() => {
               setError(null)
               setSelectedContainer(null)
             }}
-            className="ml-3 underline hover:no-underline"
+            className="ml-3 underline hover:no-underline !p-0"
           >
             Pick another container
-          </button>
+          </Button>
         </div>
       )}
       <div

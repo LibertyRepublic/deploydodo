@@ -1,17 +1,7 @@
+import { ServerRackIcon } from '@/assets/icons/index copy'
 import { Card } from '@/pages/Dashboard/Servers/PageLayout'
 
 export type ServerOptionId = 'this-machine' | 'remote-server'
-
-function ServerIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="3" width="16" height="5" rx="1.5" stroke="#181818" strokeWidth="1.5" />
-      <rect x="2" y="12" width="16" height="5" rx="1.5" stroke="#181818" strokeWidth="1.5" />
-      <circle cx="5.5" cy="5.5" r="1" fill="#181818" />
-      <circle cx="5.5" cy="14.5" r="1" fill="#181818" />
-    </svg>
-  )
-}
 
 const serverOptions: {
   id: ServerOptionId
@@ -72,7 +62,7 @@ export function SelectView({ onSelect }: { onSelect: (id: ServerOptionId) => voi
                 className="flex-1 border border-neutral-100 rounded-lg p-4 flex flex-col gap-3 text-left hover:border-high-contrast transition-colors duration-150"
               >
                 <div className="flex items-center justify-between">
-                  <ServerIcon />
+                  <ServerRackIcon />
                   <span
                     className="font-manrope font-semibold text-xs leading-4 px-2 py-1 rounded"
                     style={{ color: option.badge.color, backgroundColor: option.badge.bg }}

@@ -11,8 +11,6 @@ export { default as WarningTriangleIcon } from './warningTriangle.svg?react'
 export { default as CheckCircleOutlineIcon } from './checkCircleOutline.svg?react'
 export { default as EyeOpenIcon } from './eyeOpen.svg?react'
 export { default as EyeClosedIcon } from './eyeClosed.svg?react'
-
-// Dashboard icons
 export { default as SearchIcon } from './search.svg?react'
 export { default as BellIcon } from './bell.svg?react'
 export { default as HelpIcon } from './help.svg?react'
@@ -27,3 +25,15 @@ export { default as NavKeysIcon } from './navKeys.svg?react'
 export { default as NavTerminalIcon } from './navTerminal.svg?react'
 export { default as NavSettingsIcon } from './navSettings.svg?react'
 export { default as NavLogoutIcon } from './navLogout.svg?react'
+export { default as DotsHorizontalIcon } from "./dotsHorizontal.svg?react"
+export { default as ChevronUpIcon } from "./chevronUp.svg?react"
+export { default as DotsVerticalIcon } from "./dotsVertical.svg?react"
+export { default as FileDownloadIcon } from "./fileDownload.svg?react"
+export { default as CircularSpinnerIcon } from "./circularSpinner.svg?react"
+export { default as AlertTriangleIcon } from "./alertTriangle.svg?react"
+export { default as PauseIcon } from "./pauseIcon.svg?react"
+export { default as RestartIcon } from "./restartIcon.svg?react"
+export { default as WifiIcon } from "./wifi.svg?react"
+export { default as ClockIcon } from "./clock.svg?react"
+export { default as RefreshIcon } from "./refresh.svg?react"
+export { default as SaveIcon } from "./save.svg?react"

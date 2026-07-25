@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { PlusIcon } from '@/assets/icons'
 import { StaggerContainer, StaggerItem, staggerItemVariants } from '@/components/Animated'
 import { useServersQuery } from '@/api/queries'
-import { ServerCard, AddServerModal } from './Components'
+import { ServerCard, AddServerModal } from '@/pages/Dashboard/Servers/Components/index'
 import { createLazyRoute } from '@tanstack/react-router'
 
 export const ServersRoute = createLazyRoute('servers')({

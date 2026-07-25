@@ -6,6 +6,7 @@ import { Button } from '@/components/Button'
 import { useToast } from '@/components/Toast'
 import { useCreateAdmin } from '@/api/mutations'
 import { EyeOpenIcon, EyeClosedIcon } from '@/assets/icons'
+import { ArrowLeftIcon, CheckmarkCircleIcon } from '@/assets/icons/index copy'
 import { setAuthToken } from '@/api/client'
 import { invalidateStatusQuery } from '@/api/queries'
 
@@ -26,22 +27,7 @@ function PasswordGuidelines({ password }: { password: string }) {
         const passing = password.length > 0 && test(password)
         return (
           <li key={label} className="flex items-center gap-2">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 14 14"
-              fill="none"
-              className={passing ? 'text-green-500' : 'text-neutral-300'}
-            >
-              <circle cx="7" cy="7" r="7" fill="currentColor" opacity="0.2" />
-              <path
-                d="M4 7l2 2 4-4"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <CheckmarkCircleIcon className={passing ? 'text-green-500' : 'text-neutral-300'} />
             <span
               className={`font-sans text-xs leading-5 transition-colors duration-150 ${passing ? 'text-green-600' : 'text-text-secondary'}`}
             >
@@ -98,26 +84,9 @@ export function ChoosePassword({ name, email, onBack, onCreateAccount }: ChooseP
     <div className="bg-background rounded-xl shadow-[0px_8px_24px_0px_rgba(0,0,0,0.08),0px_0px_1px_0px_rgba(0,0,0,0.2)] w-114 max-w-full px-6 pt-4 pb-2.5">
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="text-secondary hover:opacity-70 transition-opacity"
-            aria-label="Go back"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
-          </button>
+          <Button variant="ghost" type="button" onClick={onBack} aria-label="Go back" className="!p-0">
+            <ArrowLeftIcon className="size-5" />
+          </Button>
           <h1 className="font-sans font-semibold text-2xl leading-8 text-secondary m-0">
             Choose a password
           </h1>
@@ -136,9 +105,9 @@ export function ChoosePassword({ name, email, onBack, onCreateAccount }: ChooseP
               hasError={formik.touched.password && !!formik.errors.password}
               errorMessage={formik.errors.password}
               suffix={
-                <button type="button" onClick={() => setShowPassword((v) => !v)}>
+                <Button variant="ghost" type="button" onClick={() => setShowPassword((v) => !v)} className="!p-0">
                   <EyeIcon open={showPassword} />
-                </button>
+                </Button>
               }
             />
             <PasswordGuidelines password={formik.values.password} />
@@ -153,9 +122,9 @@ export function ChoosePassword({ name, email, onBack, onCreateAccount }: ChooseP
               hasError={formik.touched.confirmPassword && !!formik.errors.confirmPassword}
               errorMessage={formik.errors.confirmPassword}
               suffix={
-                <button type="button" onClick={() => setShowConfirm((v) => !v)}>
+                <Button variant="ghost" type="button" onClick={() => setShowConfirm((v) => !v)} className="!p-0">
                   <EyeIcon open={showConfirm} />
-                </button>
+                </Button>
               }
             />
             {createAdmin.error && (

@@ -1,6 +1,6 @@
 import { useTerminalSocket } from '@/hooks/useTerminalSocket';
 import { useRef, useState } from 'react';
-import { type Status, statusColor, statusLabel } from './utils';
+import { type Status, statusColor, statusLabel } from '@/pages/Dashboard/Terminal/utils';
 
 export function TerminalSession({ serverId }: { serverId: number; }) {
     const containerRef = useRef<HTMLDivElement>(null);

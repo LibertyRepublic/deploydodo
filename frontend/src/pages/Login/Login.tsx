@@ -1,20 +1,17 @@
 import { useState } from 'react'
-import { createLazyRoute, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { TextInput } from '@/components/TextInput'
 import { Button } from '@/components/Button'
 import { LogoIcon, EyeOpenIcon, EyeClosedIcon } from '@/assets/icons'
+import { CircularSpinnerIcon } from '@/assets/icons'
 import { useToast } from '@/components/Toast'
 import { setAuthToken } from '@/api/client'
 import { invalidateValidateSessionQuery, serversQuery } from '@/api/queries'
 import { useLogin } from '@/api/mutations'
 
-export const LoginRoute = createLazyRoute('login')({
-  component: Login,
-})
-
-function Login() {
+export function Login() {
   const login = useLogin({
     onSuccess: async (data) => {
       setAuthToken(data.sessionToken)
@@ -86,9 +83,9 @@ function Login() {
               hasError={formik.touched.password && !!formik.errors.password}
               errorMessage={formik.errors.password}
               suffix={
-                <button type="button" onClick={() => setShowPassword((v) => !v)}>
+                <Button variant="ghost" type="button" onClick={() => setShowPassword((v) => !v)} className="!p-0">
                   {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
-                </button>
+                </Button>
               }
             />
             {error && (
@@ -98,25 +95,7 @@ function Login() {
               <Button type="submit" fullWidth disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      />
-                    </svg>
+                    <CircularSpinnerIcon className="animate-spin -ml-1 mr-2 h-4 w-4" />
                     Signing in...
                   </>
                 ) : (
